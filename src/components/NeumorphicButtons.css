@@ -1,0 +1,87 @@
+.neumorphic-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2.5rem;
+  padding: 4rem;
+  background-color: #e2e8f0; /* Soft gray background for the shadow pops */
+  border-radius: 20px;
+}
+
+.neu-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 48px;
+  border-radius: 50px;
+  border: none;
+  font-family: 'Inter', -apple-system, sans-serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  overflow: hidden;
+  /* Neumorphic subtle shadows against the soft light background */
+  box-shadow: 
+    -10px -10px 20px rgba(255, 255, 255, 0.9),
+    10px 10px 20px rgba(163, 177, 198, 0.5);
+}
+
+/* Glossy highlight on top edge */
+.neu-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 100%);
+  border-radius: 50px 50px 0 0;
+  pointer-events: none;
+}
+
+.neu-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    -12px -12px 24px rgba(255, 255, 255, 0.9),
+    12px 12px 24px rgba(163, 177, 198, 0.6);
+}
+
+.neu-btn:active {
+  transform: translateY(2px);
+  box-shadow: 
+    inset -4px -4px 10px rgba(255, 255, 255, 0.2),
+    inset 4px 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* VR Button Specific */
+.neu-btn.vr-btn {
+  background: linear-gradient(135deg, #ff4eab 0%, #7e22ce 100%);
+}
+
+.neu-btn.vr-btn:hover {
+  box-shadow: 
+    -12px -12px 24px rgba(255, 255, 255, 0.9),
+    12px 12px 24px rgba(163, 177, 198, 0.6),
+    0 10px 20px rgba(255, 78, 171, 0.3);
+}
+
+/* AR Button Specific */
+.neu-btn.ar-btn {
+  background: linear-gradient(135deg, #0df0e3 0%, #1d4ed8 100%);
+}
+
+.neu-btn.ar-btn:hover {
+  box-shadow: 
+    -12px -12px 24px rgba(255, 255, 255, 0.9),
+    12px 12px 24px rgba(163, 177, 198, 0.6),
+    0 10px 20px rgba(13, 240, 227, 0.3);
+}
+
+.neu-icon {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+}

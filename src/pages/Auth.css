@@ -1,0 +1,353 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+.auth-container {
+    min-height: 100vh;
+    display: flex;
+    justify-content: flex-end; /* Align card to the right */
+    align-items: center;       /* Vertically center the card */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    position: relative;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    padding: 3rem 10%; /* 10% spacing from right edge */
+    box-sizing: border-box;
+}
+
+.auth-container::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.25) 100%);
+    /* Removed heavy blur so image pops clearly */
+    z-index: 0;
+}
+
+/* Exact Brand Layout Top Left */
+.auth-brand {
+    position: absolute;
+    top: 3.5rem;
+    left: 4.5rem;
+    z-index: 2;
+    color: #1a1a1a;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.auth-brand-logo-svg {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.auth-brand-title {
+    font-size: 1.6rem;
+    font-weight: 300;
+    letter-spacing: 0.08em;
+    line-height: 1.25;
+    margin: 0;
+    text-transform: uppercase;
+}
+
+.auth-brand-subtitle {
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    margin-top: 0.4rem;
+    color: #444444;
+    text-transform: uppercase;
+}
+
+.auth-card {
+    position: relative;
+    z-index: 1;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 1.5rem 2rem; /* Aggressive size reduction */
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    text-align: left;
+    color: #1a1a1a;
+    box-sizing: border-box;
+    /* Ensure content inside doesn't cause page scroll */
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+/* Hide scrollbar for clean look */
+.auth-card::-webkit-scrollbar {
+    width: 4px;
+}
+.auth-card::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.1);
+    border-radius: 4px;
+}
+
+.auth-header {
+    margin-bottom: 0.75rem;
+}
+
+.auth-title {
+    font-size: 1.6rem;
+    font-weight: 700;
+    margin-bottom: 0.1rem;
+    color: #222222;
+    letter-spacing: -0.02em;
+}
+
+.auth-subtitle {
+    font-size: 0.85rem;
+    color: #666666;
+    font-weight: 400;
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem; /* Tightened */
+}
+
+.auth-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem; /* Tightened */
+}
+
+.auth-label-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+}
+
+.auth-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #222222;
+}
+
+.auth-forgot {
+    font-size: 0.7rem;
+    color: #888888;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.auth-forgot:hover {
+    color: #555555;
+}
+
+.auth-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.auth-icon {
+    position: absolute;
+    left: 0.8rem;
+    color: #888;
+    width: 0.95rem;
+    height: 0.95rem;
+    pointer-events: none;
+}
+
+.auth-input {
+    width: 100%;
+    height: 2.3rem; /* Compact height */
+    padding: 0 0.75rem 0 2rem; /* Correct icon padding */
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    color: #333333;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.auth-input.no-icon {
+    padding-left: 0.75rem;
+}
+
+.auth-input::placeholder {
+    color: #999999;
+}
+
+.auth-input:focus {
+    outline: none;
+    border-color: #222222;
+}
+
+.auth-button {
+    margin-top: 0.15rem;
+    padding: 0;
+    height: 2.4rem; /* Compact button */
+    background: #1e2535;
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.auth-button:hover {
+    background: #11151f;
+}
+
+.auth-button:disabled {
+    background: #99aab5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 0.65rem 0; /* Compact divider */
+    color: #666666;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.auth-divider::before { margin-right: 0.5rem; }
+.auth-divider::after { margin-left: 0.5rem; }
+
+.auth-sso-group {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0; /* Let footer set margin */
+}
+
+.auth-sso-btn {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.4rem; /* Gap between icon and text */
+    height: 2.2rem; /* Compact SSO button */
+    background: #ffffff;
+    border: 1px solid #cccccc;
+    border-radius: 6px;
+    color: #222222;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.auth-sso-icon {
+    width: 1rem;
+    height: 1rem;
+    flex-shrink: 0;
+}
+
+.auth-sso-btn:hover {
+    background: #f8f8f8;
+    border-color: #999999;
+}
+
+.auth-footer {
+    margin-top: 1rem; /* Reduced footer margin */
+    font-size: 0.75rem;
+    color: #444444;
+    text-align: center;
+}
+
+.auth-link {
+    color: #111111;
+    text-decoration: none;
+    font-weight: 700;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: inherit;
+    font-size: inherit;
+}
+
+.error-message {
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #b91c1c;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    margin-bottom: 1rem;
+}
+
+/* Mobile and Laptop Responsive Adjustments */
+@media (max-width: 1024px) {
+    .auth-container {
+        padding: 3rem 5%;
+    }
+    .auth-brand {
+        left: 2.5rem;
+        top: 2.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .auth-container {
+        flex-direction: column;
+        justify-content: center;
+        padding: 2rem;
+    }
+    .auth-container::before {
+        background: rgba(0, 0, 0, 0.15); /* More even overlay for centered content */
+    }
+    .auth-brand {
+        position: relative;
+        top: auto;
+        left: auto;
+        margin-bottom: 2rem;
+    }
+    .auth-brand-title, .auth-brand-subtitle, .auth-brand-logo-svg {
+        /* Add text shadow to keep dark text readable against potentially dark backgrounds */
+        text-shadow: 0px 0px 15px rgba(255, 255, 255, 0.9), 0px 0px 30px rgba(255, 255, 255, 0.8);
+    }
+    .auth-card {
+        max-width: 100%;
+        max-height: none; /* Allows natural scrolling if needed */
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        padding: 1.5rem 1rem;
+    }
+    .auth-card {
+        padding: 1.5rem 1.25rem;
+    }
+    .auth-brand {
+        margin-bottom: 1.5rem;
+    }
+    .auth-title { 
+        font-size: 1.4rem; 
+    }
+    .auth-brand-title {
+        font-size: 1.4rem;
+    }
+    .auth-brand-logo-svg {
+        width: 2.2rem;
+        height: 2.2rem;
+    }
+    .auth-sso-group { 
+        flex-direction: column; 
+    }
+}
