@@ -99,6 +99,6 @@ export default defineConfig({
       'firebase/analytics': path.resolve(process.cwd(), 'src/firebase-mock.js'),
     }
   },
-  envPrefix: ['VITE_', 'GEMINI_API_KEY', 'WEATHER_API_KEY', 'GOOGLE_MAPS_API_KEY'],
+  envPrefix: ['VITE_', 'WEATHER_API_KEY', 'GOOGLE_MAPS_API_KEY'],
 })
 

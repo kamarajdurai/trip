@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { usePageTitle, usePageStyle, useScript } from '../hooks';
+import { db, auth } from '../firebase';
+import { collection, addDoc, serverTimestamp, doc, setDoc, increment } from 'firebase/firestore';
 
 const PlanTrip = () => {
     usePageTitle('Tamil Nadu Travel Planner AI');
@@ -9,8 +11,8 @@ const PlanTrip = () => {
     useScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js");
     useScript("https://cdn.jsdelivr.net/npm/marked/marked.min.js");
 
-    const GEMINI_KEY = import.meta.env.GEMINI_API_KEY;
     const WEATHER_KEY = import.meta.env.WEATHER_API_KEY;
+
 
     const [loading, setLoading] = useState(false);
     const [loadingMsg, setLoadingMsg] = useState('');
@@ -24,6 +26,8 @@ const PlanTrip = () => {
     const [isExporting, setIsExporting] = useState(false);
     const [calendarEvents, setCalendarEvents] = useState([]);
     const [showSyncModal, setShowSyncModal] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
 
     // Form State
     const [city, setCity] = useState('');
@@ -101,6 +105,7 @@ const PlanTrip = () => {
     const generatePlan = async () => {
         setOutputHtml(null); // Clear previous output
         setWeatherData(null);
+        setIsSaved(false);
 
         if (!customPrompt) {
             if (!city) {
@@ -411,6 +416,76 @@ ${rawMarkdown}
         }
     };
 
+    const saveTripToHistory = async () => {
+        const user = auth.currentUser;
+        if (!user) {
+            alert("Please log in to save your trip.");
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            let budgetVal = 15000;
+            if (budget === 'cheap') budgetVal = 5000;
+            else if (budget === 'luxury') budgetVal = 50000;
+
+            const duration = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) || 0;
+
+            const getDestinationImage = (dest) => {
+                const search = dest?.toLowerCase() || '';
+                if (search.includes('ooty')) return 'https://images.unsplash.com/photo-1548013146-72479768b921?auto=format&fit=crop&w=1000&q=80';
+                if (search.includes('kodai')) return 'https://images.unsplash.com/photo-1626014303757-64174d6f0285?auto=format&fit=crop&w=1000&q=80';
+                if (search.includes('madurai')) return 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1000&q=80';
+                if (search.includes('chennai')) return 'https://images.unsplash.com/photo-1580619305218-8423a7f19bca?auto=format&fit=crop&w=1000&q=80';
+                if (search.includes('kanni')) return 'https://images.unsplash.com/photo-1601000780131-7e8e19c063cf?auto=format&fit=crop&w=1000&q=80';
+                if (search.includes('ramesh')) return 'https://images.unsplash.com/photo-1589136142558-1830f277053b?auto=format&fit=crop&w=1000&q=80';
+                return 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1000&q=80';
+            };
+
+            const tripData = {
+                title: `AI Trip to ${city || 'Destination'}`,
+                destination: city || 'Destination',
+                startDate: startDate || '',
+                endDate: endDate || '',
+                plannedBudget: budgetVal,
+                actualExpenditure: 0,
+                savings: budgetVal,
+                transport: 'Car',
+                startPlace: 'Home',
+                endPlace: city || 'Destination',
+                placesVisited: city || 'Destination',
+                distance: 0,
+                memories: rawMarkdown || '',
+                itineraryHtml: outputHtml || '',
+                isAiGenerated: true,
+                coverImage: getDestinationImage(city),
+                userId: user.uid,
+                duration: duration,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp()
+            };
+
+            // Save to trips collection
+            await addDoc(collection(db, 'users', user.uid, 'trips'), tripData);
+
+            // Update user wallet summary
+            const walletRef = doc(db, 'users', user.uid, 'wallet', 'summary');
+            await setDoc(walletRef, {
+                totalTrips: increment(1),
+                totalBudget: increment(budgetVal),
+                totalSpent: increment(0)
+            }, { merge: true });
+
+            setIsSaved(true);
+            alert("Trip saved to your Adventure History!");
+        } catch (err) {
+            console.error("Error saving trip:", err);
+            alert(`Failed to save trip: ${err.message}`);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     const copyToClipboard = (text) => {
         navigator.clipboard.writeText(text).then(() => {
             alert("JSON copied to clipboard!");
@@ -566,6 +641,9 @@ ${rawMarkdown}
                     <div className="actions" style={{ display: 'flex', gap: '0.75rem' }}>
                         {showDownload && (
                             <>
+                                <button onClick={saveTripToHistory} className="action-btn" disabled={isSaving || isSaved} style={{ background: 'var(--accent-primary)', color: 'white', border: 'none' }}>
+                                    <i className={`fa-solid ${isSaving ? 'fa-spinner fa-spin' : isSaved ? 'fa-circle-check' : 'fa-floppy-disk'}`}></i> {isSaved ? 'Saved to History' : isSaving ? 'Saving...' : 'Save Trip'}
+                                </button>
                                 <button onClick={generateCalendarEvents} className="action-btn" style={{ background: 'var(--primary-green)', color: 'white', border: 'none' }}>
                                     <i className="fa-solid fa-calendar-plus"></i> Add to Calendar
                                 </button>
