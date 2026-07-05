@@ -15,6 +15,12 @@ const Booking = () => {
     const [error, setError] = useState('');
     const [locationInfo, setLocationInfo] = useState(null);
     const [results, setResults] = useState([]);
+    
+    // Post-search filter states
+    const [ratingFilter, setRatingFilter] = useState('all');
+    const [priceFilter, setPriceFilter] = useState('all');
+    const [sortBy, setSortBy] = useState('default');
+    const [searchTextFilter, setSearchTextFilter] = useState('');
 
     // Modal States
     const [hotelDetailsModal, setHotelDetailsModal] = useState(null);
@@ -281,6 +287,12 @@ const Booking = () => {
         setError('');
         setResults([]);
         setLocationInfo(null);
+        
+        // Reset post-search filters
+        setRatingFilter('all');
+        setPriceFilter('all');
+        setSortBy('default');
+        setSearchTextFilter('');
 
         try {
             const location = await geocodeLocation(searchInput);
@@ -347,6 +359,41 @@ const Booking = () => {
         }
     };
 
+    // Filtered and Sorted Results
+    const filteredResults = results
+        .filter(place => {
+            if (ratingFilter !== 'all') {
+                const minRating = parseFloat(ratingFilter);
+                if (!place.rating || place.rating < minRating) return false;
+            }
+            if (priceFilter !== 'all') {
+                if (priceFilter === 'budget') {
+                    if (place.price_level !== undefined && place.price_level > 2) return false;
+                } else if (priceFilter === 'luxury') {
+                    if (place.price_level === undefined || place.price_level <= 2) return false;
+                }
+            }
+            if (searchTextFilter.trim() !== '') {
+                const query = searchTextFilter.toLowerCase();
+                const nameMatch = place.name?.toLowerCase().includes(query);
+                const addressMatch = (place.formatted_address || place.vicinity)?.toLowerCase().includes(query);
+                if (!nameMatch && !addressMatch) return false;
+            }
+            return true;
+        })
+        .sort((a, b) => {
+            if (sortBy === 'rating') {
+                return (b.rating || 0) - (a.rating || 0);
+            }
+            if (sortBy === 'name') {
+                return (a.name || '').localeCompare(b.name || '');
+            }
+            if (sortBy === 'price') {
+                return (a.price_level !== undefined ? a.price_level : 0) - (b.price_level !== undefined ? b.price_level : 0);
+            }
+            return 0;
+        });
+
     return (
         <div className="booking-page-wrapper">
             <Navbar />
@@ -409,8 +456,57 @@ const Booking = () => {
                     </div>
                 )}
 
+                {results.length > 0 && (
+                    <div className="post-search-filters-bar">
+                        <div className="filter-title">
+                            <i className="fa-solid fa-sliders"></i> Filter Stays ({filteredResults.length} found)
+                        </div>
+                        <div className="filters-row">
+                            <div className="filter-item-col">
+                                <label>Star Rating</label>
+                                <select className="filter-select-inline" value={ratingFilter} onChange={e => setRatingFilter(e.target.value)}>
+                                    <option value="all">All Ratings</option>
+                                    <option value="4.5">4.5+ ★ Outstanding</option>
+                                    <option value="4.0">4.0+ ★ Very Good</option>
+                                    <option value="3.5">3.5+ ★ Good</option>
+                                </select>
+                            </div>
+                            <div className="filter-item-col">
+                                <label>Pricing Class</label>
+                                <select className="filter-select-inline" value={priceFilter} onChange={e => setPriceFilter(e.target.value)}>
+                                    <option value="all">All Prices</option>
+                                    <option value="budget">Budget / Mid-range</option>
+                                    <option value="luxury">Luxury / Premium</option>
+                                </select>
+                            </div>
+                            <div className="filter-item-col">
+                                <label>Sort By</label>
+                                <select className="filter-select-inline" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+                                    <option value="default">Relevance</option>
+                                    <option value="rating">Rating (Highest first)</option>
+                                    <option value="name">Name (A to Z)</option>
+                                    <option value="price">Price (Lowest first)</option>
+                                </select>
+                            </div>
+                            <div className="filter-item-col search-within-col">
+                                <label>Search Within Results</label>
+                                <div className="input-search-within-wrapper">
+                                    <i className="fa-solid fa-magnifying-glass"></i>
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g. Radisson, Residency" 
+                                        className="filter-input-inline"
+                                        value={searchTextFilter} 
+                                        onChange={e => setSearchTextFilter(e.target.value)} 
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div id="results" className="results">
-                    {results.map((place) => {
+                    {filteredResults.map((place) => {
                         let photoUrl = '';
                         if (place.photos && place.photos.length > 0) {
                             photoUrl = place.photos[0].getUrl({ maxWidth: 400, maxHeight: 300 });
@@ -434,6 +530,13 @@ const Booking = () => {
                             </div>
                         );
                     })}
+                    {filteredResults.length === 0 && results.length > 0 && (
+                        <div className="no-results-match">
+                            <i className="fa-solid fa-hotel"></i>
+                            <h3>No hotels match your filters</h3>
+                            <p>Try adjusting your rating, pricing, or search term query.</p>
+                        </div>
+                    )}
                     {results.length === 0 && !loading && !error && <div className="no-results"></div>}
                 </div>
 
