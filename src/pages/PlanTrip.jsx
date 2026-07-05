@@ -28,6 +28,7 @@ const PlanTrip = () => {
     const [showSyncModal, setShowSyncModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+    const [savedTripId, setSavedTripId] = useState(null);
 
     // Form State
     const [city, setCity] = useState('');
@@ -92,6 +93,7 @@ const PlanTrip = () => {
             const htmlContent = marked.parse(data.text);
             setOutputHtml(htmlContent);
             setShowDownload(true);
+            await saveOrUpdateTrip(data.text, htmlContent);
         } catch (e) {
             setOutputHtml(
                 `<div class="placeholder-state" style="color:red">${e.message}</div>`
@@ -106,6 +108,7 @@ const PlanTrip = () => {
         setOutputHtml(null); // Clear previous output
         setWeatherData(null);
         setIsSaved(false);
+        setSavedTripId(null);
 
         if (!customPrompt) {
             if (!city) {
@@ -277,8 +280,10 @@ const PlanTrip = () => {
             const updatedMarkdown = currentContent.replace(dayRegex, newDayContent + "\n\n");
 
             setRawMarkdown(updatedMarkdown);
-            setOutputHtml(marked.parse(updatedMarkdown));
+            const newHtml = marked.parse(updatedMarkdown);
+            setOutputHtml(newHtml);
             setReplanFeedback('');
+            await saveOrUpdateTrip(updatedMarkdown, newHtml);
 
         } catch (err) {
             console.error("Replan error:", err);
@@ -416,14 +421,10 @@ ${rawMarkdown}
         }
     };
 
-    const saveTripToHistory = async () => {
+    const saveOrUpdateTrip = async (markdownText, htmlContent) => {
         const user = auth.currentUser;
-        if (!user) {
-            alert("Please log in to save your trip.");
-            return;
-        }
+        if (!user) return;
 
-        setIsSaving(true);
         try {
             let budgetVal = 15000;
             if (budget === 'cheap') budgetVal = 5000;
@@ -455,34 +456,37 @@ ${rawMarkdown}
                 endPlace: city || 'Destination',
                 placesVisited: city || 'Destination',
                 distance: 0,
-                memories: rawMarkdown || '',
-                itineraryHtml: outputHtml || '',
+                memories: markdownText || '',
+                itineraryHtml: htmlContent || '',
                 isAiGenerated: true,
                 coverImage: getDestinationImage(city),
                 userId: user.uid,
                 duration: duration,
-                createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
             };
 
-            // Save to trips collection
-            await addDoc(collection(db, 'users', user.uid, 'trips'), tripData);
-
-            // Update user wallet summary
             const walletRef = doc(db, 'users', user.uid, 'wallet', 'summary');
-            await setDoc(walletRef, {
-                totalTrips: increment(1),
-                totalBudget: increment(budgetVal),
-                totalSpent: increment(0)
-            }, { merge: true });
 
-            setIsSaved(true);
-            alert("Trip saved to your Adventure History!");
+            if (savedTripId) {
+                // Update existing trip in Firestore
+                await setDoc(doc(db, 'users', user.uid, 'trips', savedTripId), tripData, { merge: true });
+                console.log("Trip updated in history:", savedTripId);
+            } else {
+                // Save new trip
+                tripData.createdAt = serverTimestamp();
+                const docRef = await addDoc(collection(db, 'users', user.uid, 'trips'), tripData);
+                setSavedTripId(docRef.id);
+
+                // Update user wallet summary
+                await setDoc(walletRef, {
+                    totalTrips: increment(1),
+                    totalBudget: increment(budgetVal),
+                    totalSpent: increment(0)
+                }, { merge: true });
+                console.log("Trip saved to history:", docRef.id);
+            }
         } catch (err) {
-            console.error("Error saving trip:", err);
-            alert(`Failed to save trip: ${err.message}`);
-        } finally {
-            setIsSaving(false);
+            console.error("Error auto-saving trip:", err);
         }
     };
 
@@ -641,8 +645,8 @@ ${rawMarkdown}
                     <div className="actions" style={{ display: 'flex', gap: '0.75rem' }}>
                         {showDownload && (
                             <>
-                                <button onClick={saveTripToHistory} className="action-btn" disabled={isSaving || isSaved} style={{ background: 'var(--accent-primary)', color: 'white', border: 'none' }}>
-                                    <i className={`fa-solid ${isSaving ? 'fa-spinner fa-spin' : isSaved ? 'fa-circle-check' : 'fa-floppy-disk'}`}></i> {isSaved ? 'Saved to History' : isSaving ? 'Saving...' : 'Save Trip'}
+                                <button className="action-btn" disabled style={{ background: 'var(--accent-soft)', color: 'var(--accent-primary)', border: 'none', cursor: 'default' }}>
+                                    <i className="fa-solid fa-circle-check"></i> Auto-saved to History
                                 </button>
                                 <button onClick={generateCalendarEvents} className="action-btn" style={{ background: 'var(--primary-green)', color: 'white', border: 'none' }}>
                                     <i className="fa-solid fa-calendar-plus"></i> Add to Calendar
