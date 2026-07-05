@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -51,7 +52,7 @@ const WalletDashboard = () => {
         let unsubSubmissions = () => { };
 
         // Main Auth Listener
-        const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             // Always cleanup prev listeners when auth state changes
             unsubWallet();
             unsubTrips();

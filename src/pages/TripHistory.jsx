@@ -187,11 +187,33 @@ const TripHistory = () => {
                                 </div>
                             </div>
                         )}
-
-                        <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255, 69, 0, 0.05)', borderRadius: '15px' }}>
-                            <h3 style={{ marginBottom: '0.5rem' }}>📝 Notes</h3>
-                            <p>{selectedTrip.memories || "No specific memories recorded for this trip."}</p>
-                        </div>
+                        {selectedTrip.isAiGenerated ? (
+                            <div className="ai-itinerary-history" style={{ 
+                                marginTop: '2rem', 
+                                padding: '2rem', 
+                                background: '#fcfdfa', 
+                                border: '1px solid #e1e8e3', 
+                                borderRadius: '20px',
+                                boxShadow: '0 8px 30px rgba(0,0,0,0.02)'
+                            }}>
+                                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px', color: '#1e6a3d' }}>
+                                    <i className="fa-solid fa-wand-magic-sparkles"></i> AI Generated Itinerary
+                                </h3>
+                                <div 
+                                    className="itinerary-content-rendered" 
+                                    dangerouslySetInnerHTML={{ __html: selectedTrip.itineraryHtml }}
+                                    style={{
+                                        lineHeight: '1.7',
+                                        color: '#334155'
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div style={{ marginTop: '2rem', padding: '1.5rem', background: 'rgba(255, 69, 0, 0.05)', borderRadius: '15px' }}>
+                                <h3 style={{ marginBottom: '0.5rem' }}>📝 Notes</h3>
+                                <p>{selectedTrip.memories || "No specific memories recorded for this trip."}</p>
+                            </div>
+                        )}
                     </div>
                 </section>
             )}
