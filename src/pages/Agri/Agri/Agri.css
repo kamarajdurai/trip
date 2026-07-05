@@ -907,3 +907,55 @@ body {
         left: 22px !important;
     }
 }
+
+/* Sub tabs navigation */
+.agri-sub-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 35px;
+}
+
+.sub-tab-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.sub-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.sub-tab-btn.active {
+    background: #2d6a4f;
+    border-color: #2d6a4f;
+    color: white;
+    box-shadow: 0 4px 15px rgba(45, 106, 79, 0.4);
+}
+
+/* Product Card custom hover overrides */
+.product-card-agri {
+    transition: all 0.3s ease;
+}
+
+.product-card-agri:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
+    border-color: #2d6a4f !important;
+}
+
+/* Modal Input adjustments */
+.modal-content input, .modal-content select {
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.modal-content input:focus, .modal-content select:focus {
+    border-color: #2d6a4f !important;
+}
