@@ -27,10 +27,10 @@ const Footer = () => {
 
                 <div className="footer-social">
                     <div className="social-icons">
-                        <a href="#"><i className="fa-brands fa-instagram"></i></a>
-                        <a href="#"><i className="fa-brands fa-twitter"></i></a>
-                        <a href="#"><i className="fa-brands fa-facebook"></i></a>
-                        <a href="#"><i className="fa-brands fa-youtube"></i></a>
+                        <a href="#" aria-label="Instagram"><i className="fa-brands fa-instagram"></i></a>
+                        <a href="#" aria-label="Twitter"><i className="fa-brands fa-twitter"></i></a>
+                        <a href="#" aria-label="Facebook"><i className="fa-brands fa-facebook"></i></a>
+                        <a href="#" aria-label="YouTube"><i className="fa-brands fa-youtube"></i></a>
                     </div>
                     <p className="copyright">&copy; 2026 TNVerse. All rights reserved.</p>
                 </div>

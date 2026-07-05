@@ -22,7 +22,7 @@ const Home = () => {
             month: 'JAN 2026',
             title: t('home.event_1_title'),
             desc: t('home.event_1_desc'),
-            img: '/pongal_festival_tn_1767338347356.png',
+            img: '/pongal_festival_tn_1767338347356.webp',
             color: '#ff4e00',
             longDesc: 'Pongal is a four-day harvest festival celebrated by Tamil people globally. It is dedicated to the Sun God, Surya, and corresponds to Makar Sankranti. The festival marks the beginning of the sun\'s six-month long journey northwards (Uttarayana).'
         },
@@ -32,7 +32,7 @@ const Home = () => {
             month: 'FEB 2026',
             title: t('home.event_4_title'),
             desc: t('home.event_4_desc'),
-            img: '/thaipusam_festival_tn_1767338364844.png',
+            img: '/thaipusam_festival_tn_1767338364844.webp',
             color: '#ffc107',
             longDesc: 'Thaipusam is a Hindu festival celebrated by the Tamil community on the full moon in the Tamil month of Thai. It is dedicated to the Hindu god Murugan, the son of Shiva and Parvati.'
         },
@@ -42,7 +42,7 @@ const Home = () => {
             month: 'MAR 2026',
             title: t('home.event_6_title'),
             desc: t('home.event_6_desc'),
-            img: '/natyanjali_dance_tn_1767338382242.png',
+            img: '/natyanjali_dance_tn_1767338382242.webp',
             color: '#9c27b0',
             longDesc: 'Natyanjali is an annual classical dance festival in Chidambaram. It is dedicated to Nataraja, the Shiva deity who is the patron of the arts, particularly dance.'
         },
@@ -62,7 +62,7 @@ const Home = () => {
             month: 'APR 2026',
             title: t('home.event_2_title'),
             desc: t('home.event_2_desc'),
-            img: '/chithirai_thiruvizha_tn_1767338402401.png',
+            img: '/chithirai_thiruvizha_tn_1767338402401.webp',
             color: '#f44336',
             longDesc: 'Chithirai Thiruvizha is a grand month-long celebration in Madurai, depicting the celestial wedding of Goddess Meenakshi to Lord Sundareswarar.'
         },
@@ -72,7 +72,7 @@ const Home = () => {
             month: 'DEC 2026',
             title: t('home.event_3_title'),
             desc: t('home.event_3_desc'),
-            img: '/margazhi_music_tn_1767338428632.png',
+            img: '/margazhi_music_tn_1767338428632.webp',
             color: '#2196f3',
             longDesc: 'The Margazhi festival of dance and music is a celebration of the arts in Chennai, attracting performers and enthusiasts from across the globe.'
         }
@@ -231,11 +231,13 @@ const Home = () => {
                 {/* Background Image */}
                 <div className="stitch-hero__bg">
                     <picture>
-                        <source media="(max-width: 768px)" srcSet="/temple.png" />
+                        <source media="(max-width: 768px)" srcSet="/temple.webp" />
                         <img
-                            src="/sunset.png"
+                            src="/sunset.webp"
                             alt="Meenakshi Temple Sunrise"
                             className="stitch-hero__img"
+                            width="1920"
+                            height="1080"
                         />
                     </picture>
                     <div className="stitch-hero__overlay"></div>
@@ -287,7 +289,7 @@ const Home = () => {
                     <div className="tn-cards-container">
                         {/* Card 1 */}
                         <div className="tn-card" onClick={() => navigate('/culinary')} style={{ cursor: 'pointer' }}>
-                            <img src="/tn verse/src/memories-cuisine.png" alt="Culinary Tourism" />
+                            <img src="/tn verse/src/memories-cuisine.webp" alt="Culinary Tourism" width="400" height="280" />
                             <div className="tn-card-content">
                                 <h3>{t('home.culinary_title')}</h3>
                                 <p>{t('home.culinary_desc')}</p>
@@ -296,7 +298,7 @@ const Home = () => {
                         </div>
                         {/* Card 2 */}
                         <div className="tn-card" onClick={() => navigate('/agri')} style={{ cursor: 'pointer' }}>
-                            <img src="/tn verse/src/agri.png" alt="Agri & Rural Tourism" />
+                            <img src="/tn verse/src/agri.webp" alt="Agri & Rural Tourism" width="400" height="280" />
                             <div className="tn-card-content">
                                 <h3>{t('home.agri_title')}</h3>
                                 <p>{t('home.agri_desc')}</p>
@@ -305,7 +307,7 @@ const Home = () => {
                         </div>
                         {/* Card 3 */}
                         <div className="tn-card" onClick={() => navigate('/medical')} style={{ cursor: 'pointer' }}>
-                            <img src="/tn verse/src/medical.png" alt="Wellness & Medical Tourism" />
+                            <img src="/tn verse/src/medical.webp" alt="Wellness & Medical Tourism" width="400" height="280" />
                             <div className="tn-card-content">
                                 <h3>{t('home.wellness_title')}</h3>
                                 <p>{t('home.wellness_desc')}</p>
@@ -456,7 +458,7 @@ const Home = () => {
                             </motion.button>
                         </div>
                         <div className="about-image">
-                            <img src="/tn verse/src/tour.png" alt="Tamil Nadu Tourism" />
+                            <img src="/tn verse/src/tour.webp" alt="Tamil Nadu Tourism" width="600" height="400" />
                             <div className="image-overlay-subtle"></div>
                         </div>
                     </div>

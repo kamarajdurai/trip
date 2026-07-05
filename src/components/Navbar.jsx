@@ -130,10 +130,13 @@ const Navbar = () => {
                     <div className="stitch-navbar__actions">
                         {/* Language Dropdown */}
                         <div className="stitch-navbar__lang-wrapper">
+                            <label htmlFor="lang-select" style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', border: 0 }}>Choose Language</label>
                             <select
+                                id="lang-select"
                                 className="stitch-navbar__lang-select"
                                 onChange={(e) => changeLanguage(e.target.value)}
                                 value={i18n.language.split('-')[0]}
+                                aria-label="Choose Language"
                             >
                                 {languages.map(lang => (
                                     <option key={lang.code} value={lang.code}>{lang.name}</option>
