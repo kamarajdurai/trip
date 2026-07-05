@@ -43,6 +43,49 @@ const agriData = {
     ]
 };
 
+const curatedFarmStays = [
+    {
+        id: "fs1",
+        name: "Laxmi Farm Meadows",
+        location: "Salem",
+        price: 1800,
+        rating: 4.8,
+        image: villageHomeImg,
+        activities: "Mango picking, Milking cows, Pottery",
+        desc: "A beautiful organic mango farm nestled at the foothills of Yercaud, Salem. Experience traditional hospitality."
+    },
+    {
+        id: "fs2",
+        name: "Anamalai Valley Farmstay",
+        location: "Pollachi",
+        price: 2500,
+        rating: 4.9,
+        image: nilgirisTeaImg,
+        activities: "Bullock cart rides, Coconut harvesting, Canal swimming",
+        desc: "Stay amidst lush coconut groves in Pollachi. Enjoy fresh organic meals cooked on wood fires."
+    },
+    {
+        id: "fs3",
+        name: "Nellore Paddy Fields Stay",
+        location: "Madurai",
+        price: 1500,
+        rating: 4.7,
+        image: villageActivityImg,
+        activities: "Paddy sowing, Traditional folk music, Bullock carts",
+        desc: "A rustic heritage home surrounded by organic paddy fields, just outside Madurai."
+    },
+    {
+        id: "fs4",
+        name: "Coonoor Tea Hills Homestay",
+        location: "Ooty",
+        price: 3200,
+        rating: 4.9,
+        image: valparaiCoffeeImg,
+        activities: "Tea plucking, Trekking, Campfire",
+        desc: "Relax in a vintage bungalow overlooking organic tea gardens in the Nilgiris hills."
+    }
+];
+
 export default function Agri() {
     const [searchParams, setSearchParams] = useSearchParams();
     const activeSection = searchParams.get('section'); // 'plantation', 'stay', 'village', 'support'
@@ -51,6 +94,7 @@ export default function Agri() {
     // --- Search Logic State ---
     const [searchTerm, setSearchTerm] = useState('');
     const [places, setPlaces] = useState([]);
+    const [localStays, setLocalStays] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
     const [selectedPlace, setSelectedPlace] = useState(null);
@@ -200,6 +244,17 @@ export default function Agri() {
         setLoading(true);
         setError('');
         setPlaces([]);
+        setLocalStays([]);
+
+        // Check local database for stays
+        if (activeSection === 'stay') {
+            const matches = curatedFarmStays.filter(stay => 
+                stay.location.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                searchTerm.toLowerCase().includes(stay.location.toLowerCase()) ||
+                stay.name.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+            setLocalStays(matches);
+        }
 
         let query = '';
         if (activeSection === 'stay') {
@@ -228,7 +283,9 @@ export default function Agri() {
             if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
                 setPlaces(results);
             } else {
-                setError('No results found. Try broader terms or a different location.');
+                if (localStays.length === 0) {
+                    setError('No results found. Try broader terms or a different location.');
+                }
             }
         });
     };
@@ -261,6 +318,7 @@ export default function Agri() {
     const handleBack = () => {
         setSearchParams({});
         setPlaces([]);
+        setLocalStays([]);
         setSearchTerm('');
         setActiveSubTab('explore');
     };
@@ -543,7 +601,7 @@ export default function Agri() {
                                         <input
                                             type='text'
                                             className='search-input'
-                                            placeholder='Search stays (e.g. "Coimbatore", "Yercaud")'
+                                            placeholder='Search stays (e.g. "Salem", "Pollachi", "Ooty")'
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
                                             onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
@@ -556,39 +614,83 @@ export default function Agri() {
 
                                 {error && <div className='error-state'><p>{error}</p></div>}
 
-                                {!loading && places.length === 0 && !error && (
+                                {/* Curated Village Farm Stays based on searched place */}
+                                {localStays.length > 0 && (
+                                    <div style={{ marginBottom: '30px', padding: '0 20px' }}>
+                                        <h3 style={{ marginBottom: '20px', color: '#2d6a4f', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            🌿 Curated Village Farm Stays in {searchTerm}
+                                        </h3>
+                                        <div className='places-grid'>
+                                            {localStays.map(stay => (
+                                                <div key={stay.id} className='place-card' style={{ border: '2px solid #2d6a4f', position: 'relative' }} onClick={() => setActiveBooking({
+                                                    type: 'stay',
+                                                    item: {
+                                                        title: stay.name,
+                                                        hostName: stay.name + ' Manager',
+                                                        price: stay.price,
+                                                        image: stay.image
+                                                    }
+                                                })}>
+                                                    <div className='eco-badge' style={{ background: '#2d6a4f', color: 'white', position: 'absolute', top: '10px', right: '10px' }}>🌿 Curated Stay</div>
+                                                    <img src={stay.image} className='place-image' alt={stay.name} />
+                                                    <div className='place-content'>
+                                                        <h3 className='place-name'>{stay.name}</h3>
+                                                        <p className='place-address'>{stay.desc}</p>
+                                                        <div style={{ margin: '10px 0', fontSize: '0.85rem', color: '#666' }}>
+                                                            <strong>Farming Activities:</strong> {stay.activities}
+                                                        </div>
+                                                        <div className='place-meta' style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                                                            <div className='place-rating'>★ {stay.rating}</div>
+                                                            <span style={{ fontWeight: 'bold', color: '#2d6a4f' }}>₹{stay.price}/night</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!loading && places.length === 0 && localStays.length === 0 && !error && (
                                     <div style={{ textAlign: 'center', marginTop: '40px' }}>
                                         <img src={villageHomeImg} style={{ maxWidth: '100%', borderRadius: '10px', height: '300px', objectFit: 'cover' }} alt="Stay" />
                                         <p style={{ marginTop: '20px', color: '#666' }}>Enter a location to find authentic farm stays and rustic resorts.</p>
                                     </div>
                                 )}
 
-                                <div className='places-grid'>
-                                    {places.map(place => (
-                                        <div key={place.place_id} className='place-card' onClick={() => handleCardClick(place.place_id)}>
-                                            <img src={getPhotoUrl(place.photos?.[0])} className='place-image' alt={place.name} />
-                                            <div className='place-content'>
-                                                <h3 className='place-name'>{place.name}</h3>
-                                                <p className='place-address'>{place.formatted_address}</p>
-                                                <div className='place-meta'>
-                                                    <div className='place-rating'>★ {place.rating || 'N/A'}</div>
-                                                    <button className='btn-green' style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActiveBooking({
-                                                            type: 'stay',
-                                                            item: {
-                                                                title: place.name,
-                                                                hostName: 'Resort Host',
-                                                                price: 2500,
-                                                                image: getPhotoUrl(place.photos?.[0])
-                                                            }
-                                                        });
-                                                    }}>Book Stay</button>
+                                {/* Other Nearby Stays from Google Places */}
+                                {places.length > 0 && (
+                                    <div style={{ padding: '0 20px' }}>
+                                        <h3 style={{ marginBottom: '20px', color: '#666' }}>
+                                            {localStays.length > 0 ? "Other Stays Nearby" : "Stays Found Nearby"}
+                                        </h3>
+                                        <div className='places-grid'>
+                                            {places.map(place => (
+                                                <div key={place.place_id} className='place-card' onClick={() => handleCardClick(place.place_id)}>
+                                                    <img src={getPhotoUrl(place.photos?.[0])} className='place-image' alt={place.name} />
+                                                    <div className='place-content'>
+                                                        <h3 className='place-name'>{place.name}</h3>
+                                                        <p className='place-address'>{place.formatted_address}</p>
+                                                        <div className='place-meta'>
+                                                            <div className='place-rating'>★ {place.rating || 'N/A'}</div>
+                                                            <button className='btn-green' style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActiveBooking({
+                                                                    type: 'stay',
+                                                                    item: {
+                                                                        title: place.name,
+                                                                        hostName: 'Resort Host',
+                                                                        price: 2500,
+                                                                        image: getPhotoUrl(place.photos?.[0])
+                                                                    }
+                                                                });
+                                                            }}>Book Stay</button>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
+                                            ))}
                                         </div>
-                                    ))}
-                                </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
