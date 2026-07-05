@@ -6,7 +6,7 @@ import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDEbWcYNKQ8Eq4a9bu-F544yqJEHcDaAVs",
-    authDomain: "tnverse2026.web.app",
+    authDomain: "tnverse2026.firebaseapp.com",
     projectId: "tnverse2026",
     storageBucket: "tnverse2026.firebasestorage.app",
     messagingSenderId: "333991686940",
