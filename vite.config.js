@@ -90,6 +90,7 @@ export default defineConfig({
       }
     }
   ],
+  /*
   resolve: {
     alias: {
       'firebase/app': path.resolve(process.cwd(), 'src/firebase-mock.js'),
@@ -99,6 +100,7 @@ export default defineConfig({
       'firebase/analytics': path.resolve(process.cwd(), 'src/firebase-mock.js'),
     }
   },
+  */
   envPrefix: ['VITE_', 'WEATHER_API_KEY', 'GOOGLE_MAPS_API_KEY'],
 })
 
