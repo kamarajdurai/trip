@@ -504,6 +504,30 @@ ${rawMarkdown}
                     <h1>TN.AI Planner</h1>
                     <div className="logo-bar"></div>
                 </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '-14px' }}>
+                    <button
+                        onClick={() => window.location.href = '/home'}
+                        style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-secondary)',
+                            fontSize: '0.75rem',
+                            fontFamily: 'var(--font-display)',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '4px 0',
+                            letterSpacing: '0.02em',
+                            transition: 'color 0.2s'
+                        }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--brand-coral)'}
+                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
+                    >
+                        <i className="fa-solid fa-chevron-left" style={{ fontSize: '0.65rem' }}></i> Back to Home
+                    </button>
+                </div>
 
                 <div className="controls">
                     <div className="control-group">
@@ -538,7 +562,7 @@ ${rawMarkdown}
                                 style={{ marginBottom: '0.75rem', fontSize: '0.85rem' }}
                             ></textarea>
 
-                            <button onClick={replanDay} className="action-btn" style={{ width: '100%', background: 'var(--accent-soft)', border: 'none', color: 'var(--accent-primary)', justifyContent: 'center' }}>
+                            <button onClick={replanDay} className="action-btn" style={{ width: '100%', background: 'var(--brand-coral-lt)', border: 'none', color: 'var(--brand-coral)', justifyContent: 'center' }}>
                                 <i className="fa-solid fa-wand-magic-sparkles"></i> Update Day {selectedDayToReplan}
                             </button>
                         </div>
@@ -645,13 +669,13 @@ ${rawMarkdown}
                     <div className="actions" style={{ display: 'flex', gap: '0.75rem' }}>
                         {showDownload && (
                             <>
-                                <button className="action-btn" disabled style={{ background: 'var(--accent-soft)', color: 'var(--accent-primary)', border: 'none', cursor: 'default' }}>
-                                    <i className="fa-solid fa-circle-check"></i> Auto-saved to History
+                                <button className="action-btn" disabled style={{ background: 'var(--brand-coral-lt)', color: 'var(--brand-coral)', border: 'none', cursor: 'default', opacity: 0.9 }}>
+                                    <i className="fa-solid fa-circle-check"></i> Auto-saved
                                 </button>
-                                <button onClick={generateCalendarEvents} className="action-btn" style={{ background: 'var(--primary-green)', color: 'white', border: 'none' }}>
+                                <button onClick={generateCalendarEvents} className="action-btn" style={{ background: 'linear-gradient(135deg, #34A853 0%, #1E8A3C 100%)', color: 'white', border: 'none', boxShadow: '0 4px 14px rgba(52,168,83,0.3)' }}>
                                     <i className="fa-solid fa-calendar-plus"></i> Add to Calendar
                                 </button>
-                                <button id="downloadBtn" onClick={downloadPDF} className="action-btn">
+                                <button id="downloadBtn" onClick={downloadPDF} className="action-btn" style={{ background: 'linear-gradient(135deg, var(--brand-coral) 0%, var(--brand-coral-dk) 100%)', color: 'white', border: 'none', boxShadow: '0 4px 14px rgba(211,107,70,0.3)' }}>
                                     <i className="fa-solid fa-file-pdf"></i> Download PDF
                                 </button>
                             </>
@@ -659,50 +683,7 @@ ${rawMarkdown}
                     </div>
                 </div>
 
-                <div id="output" className="output-area">
-                    {/* Corner Botanical Leaves */}
-                    <svg className="decor-leaf top-right-leaf" viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M160 0 C120 40, 80 80, 40 100" stroke="#6B7D72" strokeWidth="1.5" strokeLinecap="round" opacity="0.3"/>
-                        <path d="M160 0 C135 15, 125 22, 115 15 C128 7, 142 4, 160 0 Z" fill="#2E8B57" opacity="0.15"/>
-                        <path d="M135 22 C110 32, 100 40, 95 32 C104 25, 122 20, 135 22 Z" fill="#1E6A3D" opacity="0.12"/>
-                        <path d="M115 42 C92 48, 82 56, 78 48 C87 40, 102 38, 115 42 Z" fill="#2E8B57" opacity="0.18"/>
-                        <path d="M96 64 C75 66, 65 74, 61 66 C70 58, 83 60, 96 64 Z" fill="#1E6A3D" opacity="0.15"/>
-                        <path d="M78 84 C60 84, 50 92, 46 84 C54 76, 67 78, 78 84 Z" fill="#2E8B57" opacity="0.2"/>
-                    </svg>
-                    <svg className="decor-leaf bottom-left-leaf" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M0 180 C40 140, 80 100, 100 60" stroke="#6B7D72" strokeWidth="1.5" strokeLinecap="round" opacity="0.3"/>
-                        <path d="M0 180 C15 155, 22 145, 15 135 C7 148, 4 162, 0 180 Z" fill="#2E8B57" opacity="0.15"/>
-                        <path d="M22 155 C32 130, 40 120, 32 115 C25 124, 20 142, 22 155 Z" fill="#1E6A3D" opacity="0.12"/>
-                        <path d="M42 135 C48 112, 56 102, 48 98 C40 107, 38 122, 42 135 Z" fill="#2E8B57" opacity="0.18"/>
-                        <path d="M64 116 C66 95, 74 85, 66 81 C58 90, 60 103, 64 116 Z" fill="#1E6A3D" opacity="0.15"/>
-                        <path d="M84 98 C84 80, 92 70, 84 66 C76 74, 78 87, 84 98 Z" fill="#2E8B57" opacity="0.2"/>
-                    </svg>
-                    <svg className="decor-leaf bottom-right-leaf" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M180 180 C140 140, 100 100, 80 60" stroke="#6B7D72" strokeWidth="1.5" strokeLinecap="round" opacity="0.3"/>
-                        <path d="M180 180 C165 155, 158 145, 165 135 C173 148, 176 162, 180 180 Z" fill="#2E8B57" opacity="0.15"/>
-                        <path d="M158 155 C148 130, 140 120, 148 115 C155 124, 160 142, 158 155 Z" fill="#1E6A3D" opacity="0.12"/>
-                        <path d="M138 135 C132 112, 124 102, 132 98 C140 107, 142 122, 138 135 Z" fill="#2E8B57" opacity="0.18"/>
-                        <path d="M116 116 C114 95, 106 85, 114 81 C122 90, 120 103, 116 116 Z" fill="#1E6A3D" opacity="0.15"/>
-                        <path d="M96 98 C96 80, 88 70, 96 66 C104 74, 102 87, 96 98 Z" fill="#2E8B57" opacity="0.2"/>
-                    </svg>
-
-                    {/* Bottom Layered Hills */}
-                    <div className="decor-hills">
-                        <svg viewBox="0 0 800 160" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
-                            <defs>
-                                <linearGradient id="hillGradBack" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="#EAF5E8" stopOpacity="0.4"/>
-                                    <stop offset="100%" stopColor="#FAFBF8" stopOpacity="0.8"/>
-                                </linearGradient>
-                                <linearGradient id="hillGradFront" x1="0%" y1="0%" x2="0%" y2="100%">
-                                    <stop offset="0%" stopColor="#DDE8D9" stopOpacity="0.5"/>
-                                    <stop offset="100%" stopColor="#EAF5E8" stopOpacity="0.9"/>
-                                </linearGradient>
-                            </defs>
-                            <path d="M-50 160 C150 100, 250 120, 450 80 C650 40, 750 100, 850 160 Z" fill="url(#hillGradBack)"/>
-                            <path d="M-50 160 C100 120, 300 90, 500 120 C700 150, 800 110, 850 160 Z" fill="url(#hillGradFront)"/>
-                        </svg>
-                    </div>
+                <div id="output" className={`output-area ${(!outputHtml && !weatherData && !loading) ? 'placeholder-bg' : ''}`}>
 
                     {loading ? (
                         <div className="loading">
@@ -730,66 +711,7 @@ ${rawMarkdown}
                                 {outputHtml && <div dangerouslySetInnerHTML={{ __html: outputHtml }}></div>}
                             </div>
                         ) : (
-                            <div className="placeholder-state">
-                                <svg width="320" height="240" viewBox="0 0 320 240" fill="none" xmlns="http://www.w3.org/2000/svg" className="center-illustration">
-                                    <defs>
-                                        <linearGradient id="mountGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stopColor="#E2EFE0" stopOpacity="0.8"/>
-                                            <stop offset="100%" stopColor="#FAFBF8" stopOpacity="0.3"/>
-                                        </linearGradient>
-                                        <linearGradient id="mountGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" stopColor="#C5DFBF" stopOpacity="0.6"/>
-                                            <stop offset="100%" stopColor="#EAF5E8" stopOpacity="0.2"/>
-                                        </linearGradient>
-                                        <linearGradient id="hillGrad1" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" stopColor="#A9D49E" stopOpacity="0.7"/>
-                                            <stop offset="100%" stopColor="#EAF5E8" stopOpacity="0.4"/>
-                                        </linearGradient>
-                                        <linearGradient id="hillGrad2" x1="0%" y1="0%" x2="0%" y2="100%">
-                                            <stop offset="0%" stopColor="#8BBF80" stopOpacity="0.8"/>
-                                            <stop offset="100%" stopColor="#C5DFBF" stopOpacity="0.3"/>
-                                        </linearGradient>
-                                        <filter id="pinShadow" x="-20%" y="-20%" width="140%" height="140%">
-                                            <feDropShadow dx="0" dy="8" stdDeviation="6" floodColor="#1E6A3D" floodOpacity="0.15"/>
-                                        </filter>
-                                    </defs>
-                                    <g opacity="0.7">
-                                        <path d="M50 70 C50 60, 70 60, 80 65 C85 55, 105 55, 110 65 C120 65, 125 75, 115 80 C115 82, 50 82, 50 70 Z" fill="#FFFFFF" opacity="0.9"/>
-                                        <path d="M220 50 C220 42, 235 42, 242 46 C246 38, 262 38, 266 46 C274 46, 278 54, 270 58 C270 60, 220 60, 220 50 Z" fill="#FFFFFF" opacity="0.8"/>
-                                    </g>
-                                    <g opacity="0.5">
-                                        <path d="M110 45 C112 43, 115 45, 117 43 C119 45, 122 43, 124 45 C121 46, 113 46, 110 45 Z" fill="#6B7D72"/>
-                                        <path d="M205 38 C207 36, 210 38, 212 36 C214 38, 217 36, 219 38 C216 39, 208 39, 205 38 Z" fill="#6B7D72"/>
-                                    </g>
-                                    <path d="M20 180 L110 90 L200 180 Z" fill="url(#mountGrad1)" />
-                                    <path d="M120 180 L210 80 L300 180 Z" fill="url(#mountGrad1)" />
-                                    <path d="M70 180 L160 105 L250 180 Z" fill="url(#mountGrad2)" />
-                                    <path d="M-10 190 Q60 150 150 175 T330 160 L330 240 L-10 240 Z" fill="url(#hillGrad1)" />
-                                    <path d="M-10 205 Q90 180 180 200 T330 190 L330 240 L-10 240 Z" fill="url(#hillGrad2)" />
-                                    <g transform="translate(60, 155)" opacity="0.9">
-                                        <line x1="0" y1="0" x2="0" y2="15" stroke="#1E6A3D" strokeWidth="2"/>
-                                        <circle cx="0" cy="-3" r="7" fill="#2E8B57"/>
-                                        <circle cx="-4" cy="-7" r="5" fill="#39A84A"/>
-                                        <circle cx="4" cy="-7" r="5" fill="#22863A"/>
-                                    </g>
-                                    <g transform="translate(260, 165)" opacity="0.85">
-                                        <line x1="0" y1="0" x2="0" y2="18" stroke="#1E6A3D" strokeWidth="2"/>
-                                        <circle cx="0" cy="-4" r="9" fill="#1E6A3D"/>
-                                        <circle cx="-5" cy="-8" r="6" fill="#2E8B57"/>
-                                        <circle cx="5" cy="-8" r="6" fill="#39A84A"/>
-                                    </g>
-                                    <g transform="translate(100, 180)" opacity="0.9">
-                                        <line x1="0" y1="0" x2="0" y2="12" stroke="#1E6A3D" strokeWidth="1.5"/>
-                                        <circle cx="0" cy="-2" r="6" fill="#22863A"/>
-                                    </g>
-                                    <g transform="translate(160, 130)" filter="url(#pinShadow)">
-                                        <ellipse cx="0" cy="22" rx="6" ry="2.5" fill="#1E6A3D" opacity="0.2"/>
-                                        <path d="M0 20 C-15 5 -15 -10 0 -22 C15 -10 15 5 0 20 Z" fill="#2E8B57" stroke="#FFFFFF" strokeWidth="2"/>
-                                        <circle cx="0" cy="-3" r="6" fill="#FFFFFF"/>
-                                    </g>
-                                </svg>
-                                <p>Enter your trip details to generate a personalized AI travel plan.</p>
-                            </div>
+                            <div className="placeholder-state"></div>
                         )
                     )}
                 </div>

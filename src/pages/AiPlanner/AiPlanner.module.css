@@ -189,7 +189,11 @@
     padding: 2rem;
     overflow-y: auto;
     position: relative;
-    background-color: #0f172a;
+    background-color: #c8b8d8;
+    background-image: url('/trip_hero_purple.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .resultHeader {
@@ -232,10 +236,8 @@
 /* Output Area Styling (Markdown) */
 .outputArea {
     flex: 1;
-    background-color: #1e293b;
-    /* var(--bg-sidebar) */
-    border: 1px solid #475569;
-    /* var(--border-color) */
+    background-color: transparent;
+    border: none;
     border-radius: 1rem;
     padding: 2rem;
     overflow-y: auto;
@@ -244,22 +246,29 @@
     color: #e2e8f0;
 }
 
+.outputArea.hasContent {
+    background-color: #1e293b;
+    border: 1px solid #475569;
+}
+
 .placeholderState {
     height: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    color: #94a3b8;
-    /* var(--text-secondary) */
-    opacity: 0.6;
     text-align: center;
+    pointer-events: none;
 }
 
-.placeholderState i {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    color: #475569;
+.placeholderText {
+    color: #3b2a6e;
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    max-width: 280px;
+    line-height: 1.7;
+    text-shadow: 0 1px 4px rgba(255,255,255,0.5);
 }
 
 .loading {

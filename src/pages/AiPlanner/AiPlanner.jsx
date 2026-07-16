@@ -253,6 +253,7 @@ const AiPlanner = () => {
             </aside>
 
             <main className={styles.mainContent}>
+                {(result || loading) && (
                 <div className={styles.resultHeader}>
                     <h2>Your Itinerary</h2>
                     {result && (
@@ -261,8 +262,9 @@ const AiPlanner = () => {
                         </button>
                     )}
                 </div>
+                )}
 
-                <div id="output" className={styles.outputArea} ref={outputRef}>
+                <div id="output" className={`${styles.outputArea}${(result || loading) ? ' ' + styles.hasContent : ''}`} ref={outputRef}>
                     {loading && (
                         <div className={styles.loading}>
                             <i className="fa-solid fa-circle-notch"></i>
@@ -272,8 +274,9 @@ const AiPlanner = () => {
 
                     {!loading && !result && !error && (
                         <div className={styles.placeholderState}>
-                            <i className="fa-solid fa-map-location-dot"></i>
-                            <p>Enter your trip details to generate a personalized AI travel plan.</p>
+                            <div className={styles.placeholderText}>
+                                Enter your trip details to generate a personalized AI travel plan.
+                            </div>
                         </div>
                     )}
 
