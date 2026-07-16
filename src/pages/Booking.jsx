@@ -2,6 +2,8 @@ import React, { useEffect, useState, useRef } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { usePageTitle, usePageStyle } from '../hooks';
+import { db } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const Booking = () => {
     usePageTitle('Hotel Booking - Tamil Nadu | Premium Hotel Search');
@@ -26,6 +28,10 @@ const Booking = () => {
     const [hotelDetailsModal, setHotelDetailsModal] = useState(null);
     const [bookingModal, setBookingModal] = useState(null); // { placeId, name, rooms }
     const [bookingFormModal, setBookingFormModal] = useState(null); // { hotelId, roomNumber, hotelName }
+    const [idType, setIdType] = useState('Aadhar Card');
+    const [idFile, setIdFile] = useState(null); // { name, size, type, dataURL }
+    const [bookingSuccessModal, setBookingSuccessModal] = useState(null); // booking summary data
+    const [bookingInProgress, setBookingInProgress] = useState(false);
 
     const placesService = useRef(null);
     const geocoder = useRef(null);
@@ -343,19 +349,157 @@ const Booking = () => {
         return JSON.parse(localStorage.getItem(key));
     };
 
-    const bookRoom = (e) => {
-        e.preventDefault();
-        const { hotelId, roomNumber } = bookingFormModal;
+    const compressImage = (file) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
 
-        const key = `rooms_${hotelId}`;
-        let rooms = JSON.parse(localStorage.getItem(key));
-        const idx = rooms.findIndex(r => r.number === roomNumber);
-        if (idx !== -1) {
-            rooms[idx].status = 'booked';
-            localStorage.setItem(key, JSON.stringify(rooms));
-            alert('Booking Confirmed for Room ' + roomNumber);
+                        const MAX_SIZE = 800;
+                        if (width > height) {
+                            if (width > MAX_SIZE) {
+                                height *= MAX_SIZE / width;
+                                width = MAX_SIZE;
+                            }
+                        } else {
+                            if (height > MAX_SIZE) {
+                                width *= MAX_SIZE / height;
+                                height = MAX_SIZE;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const dataURL = canvas.toDataURL('image/jpeg', 0.6);
+                        resolve(dataURL);
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+                img.onerror = (e) => reject(e);
+                img.src = event.target.result;
+            };
+            reader.onerror = (e) => reject(e);
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const readOriginalFile = (file) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setIdFile({
+                name: file.name,
+                size: (file.size / 1024).toFixed(1) + ' KB',
+                type: file.type,
+                dataURL: reader.result
+            });
+        };
+        reader.readAsDataURL(file);
+    };
+
+    const handleFileUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (file.type.startsWith('image/')) {
+            try {
+                const compressedDataURL = await compressImage(file);
+                // Extract file name base
+                const dotIndex = file.name.lastIndexOf('.');
+                const baseName = dotIndex !== -1 ? file.name.substring(0, dotIndex) : file.name;
+                setIdFile({
+                    name: baseName + '.jpg',
+                    size: (compressedDataURL.length * 0.75 / 1024).toFixed(1) + ' KB',
+                    type: 'image/jpeg',
+                    dataURL: compressedDataURL
+                });
+            } catch (err) {
+                console.error("Image compression failed, falling back to original:", err);
+                readOriginalFile(file);
+            }
+        } else {
+            // PDF or other documents
+            if (file.size > 700 * 1024) {
+                alert('PDF files must be under 700 KB to fit database size limits. Please upload a compressed PDF or a JPG/PNG image.');
+                e.target.value = '';
+                return;
+            }
+            readOriginalFile(file);
+        }
+    };
+
+    const bookRoom = async (e) => {
+        e.preventDefault();
+        if (!idFile) {
+            alert('Please upload your ID proof first!');
+            return;
+        }
+
+        const { hotelId, roomNumber, hotelName, price, placeName } = bookingFormModal;
+        const formData = new FormData(e.target);
+        const guestName = formData.get('guestName');
+        const contactNumber = formData.get('contactNumber');
+        const checkInDate = formData.get('checkIn');
+        const checkOutDate = formData.get('checkOut');
+
+        setBookingInProgress(true);
+
+        try {
+            // Store details in Firestore
+            // Path: hotels/{placeName}/hotelNames/{hotelName}/bookings/{bookingId}
+            const bookingRef = collection(db, 'hotels', placeName, 'hotelNames', hotelName, 'bookings');
+            await addDoc(bookingRef, {
+                guestName,
+                contactNumber,
+                checkInDate,
+                checkOutDate,
+                roomNumber,
+                price,
+                idType,
+                idFileName: idFile.name,
+                idFileSize: idFile.size,
+                idFileType: idFile.type,
+                idFileData: idFile.dataURL,
+                bookedAt: serverTimestamp()
+            });
+
+            // Update Local Storage Status
+            const key = `rooms_${hotelId}`;
+            let rooms = JSON.parse(localStorage.getItem(key));
+            const idx = rooms.findIndex(r => r.number === roomNumber);
+            if (idx !== -1) {
+                rooms[idx].status = 'booked';
+                localStorage.setItem(key, JSON.stringify(rooms));
+            }
+
+            // Set success modal state
+            setBookingSuccessModal({
+                hotelName,
+                roomNumber,
+                price,
+                guestName,
+                contactNumber,
+                checkInDate,
+                checkOutDate,
+                idType,
+                idFile
+            });
+            
             setBookingFormModal(null);
             setBookingModal(null); // Close everything
+        } catch (error) {
+            console.error("Firestore booking storage failed: ", error);
+            alert("Database Error: Failed to secure booking. " + error.message);
+        } finally {
+            setBookingInProgress(false);
         }
     };
 
@@ -588,12 +732,17 @@ const Booking = () => {
                                     {bookingModal.rooms.filter(r => r.status === 'available').map((room) => (
                                         <div key={room.number} className="room-card available"
                                             onClick={() => {
+                                                const rawSearch = searchInput.trim();
+                                                const resolvedPlace = rawSearch ? rawSearch.split(',')[0].trim() : 'Tamil Nadu';
                                                 setBookingFormModal({
                                                     hotelId: bookingModal.placeId,
                                                     roomNumber: room.number,
                                                     hotelName: bookingModal.name,
-                                                    price: room.price
+                                                    price: room.price,
+                                                    placeName: resolvedPlace
                                                 });
+                                                setIdType('Aadhar Card');
+                                                setIdFile(null);
                                                 setBookingModal(null);
                                             }}
                                         >
@@ -637,24 +786,145 @@ const Booking = () => {
                                 <form onSubmit={bookRoom} className="booking-form-premium">
                                     <div className="form-group-modern">
                                         <label>Full Guest Name</label>
-                                        <input type="text" placeholder="John Doe" required />
+                                        <input type="text" name="guestName" placeholder="John Doe" required />
                                     </div>
                                     <div className="form-group-modern">
                                         <label>Contact Number</label>
-                                        <input type="tel" placeholder="+91 98765 43210" required />
+                                        <input type="tel" name="contactNumber" placeholder="+91 98765 43210" required />
                                     </div>
                                     <div className="form-row-modern">
                                         <div className="form-group-modern">
                                             <label>Check-in Date</label>
-                                            <input type="date" required />
+                                            <input type="date" name="checkIn" required />
                                         </div>
                                         <div className="form-group-modern">
                                             <label>Check-out Date</label>
-                                            <input type="date" required />
+                                            <input type="date" name="checkOut" required />
                                         </div>
                                     </div>
-                                    <button type="submit" className="confirm-btn-premium">Confirm Secure Booking</button>
+                                    <div className="form-group-modern">
+                                        <label>Select ID Document Type</label>
+                                        <select 
+                                            value={idType} 
+                                            onChange={e => setIdType(e.target.value)}
+                                            className="filter-input-select"
+                                        >
+                                            <option value="Aadhar Card">Aadhar Card</option>
+                                            <option value="PAN Card">PAN Card</option>
+                                            <option value="Passport">Passport</option>
+                                            <option value="Driving License">Driving License</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group-modern">
+                                        <label>Upload ID Proof ({idType})</label>
+                                        {!idFile ? (
+                                            <div className="upload-zone" onClick={() => document.getElementById('id-proof-input').click()}>
+                                                <i className="fa-solid fa-cloud-arrow-up"></i>
+                                                <p>Click or drag to upload document</p>
+                                                <span>PDF, PNG, JPG (Max 5MB)</span>
+                                                <input 
+                                                    id="id-proof-input" 
+                                                    type="file" 
+                                                    accept="image/*,application/pdf" 
+                                                    style={{ display: 'none' }} 
+                                                    onChange={handleFileUpload} 
+                                                    required 
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="upload-preview-card">
+                                                <div className="preview-details">
+                                                    {idFile.type.startsWith('image/') ? (
+                                                        <img src={idFile.dataURL} alt="ID Preview" className="preview-thumb" />
+                                                    ) : (
+                                                        <div className="preview-icon"><i className="fa-solid fa-file-pdf"></i></div>
+                                                    )}
+                                                    <div className="preview-meta">
+                                                        <span className="file-name">{idFile.name}</span>
+                                                        <span className="file-size">{idFile.size}</span>
+                                                    </div>
+                                                </div>
+                                                <button type="button" className="remove-file-btn" onClick={() => setIdFile(null)}>
+                                                    <i className="fa-solid fa-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <button type="submit" className="confirm-btn-premium" disabled={bookingInProgress}>
+                                        {bookingInProgress ? 'Processing Stay...' : 'Confirm Secure Booking'}
+                                    </button>
                                 </form>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Booking Success Modal */}
+                {bookingSuccessModal && (
+                    <div id="bookingSuccessModal" className="modal" style={{ display: 'block' }} onClick={(e) => { if (e.target.id === 'bookingSuccessModal') setBookingSuccessModal(null) }}>
+                        <div className="modal-content booking-modal-content" style={{ maxWidth: 550 }}>
+                            <div className="booking-header" style={{ justifyContent: 'center', background: 'var(--success-color)' }}>
+                                <h2>Booking Confirmed!</h2>
+                            </div>
+                            <div className="booking-body" style={{ padding: '24px', textAlign: 'center' }}>
+                                <div className="success-checkmark-wrapper">
+                                    <div className="success-checkmark">
+                                        <div className="check-icon">
+                                            <span className="icon-line line-tip"></span>
+                                            <span className="icon-line line-long"></span>
+                                            <div className="icon-circle"></div>
+                                            <div className="icon-fix"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <h3 style={{ margin: '12px 0 6px', color: 'var(--success-color)', fontSize: '1.4rem', fontWeight: 800 }}>Stay Secured</h3>
+                                <p style={{ color: 'var(--text-secondary)', marginBottom: 20, fontSize: '0.9rem' }}>Your reservation has been successfully completed. A confirmation email has been sent to your registered address.</p>
+                                
+                                <div className="success-receipt-box">
+                                    <div className="receipt-row">
+                                        <span>Hotel</span>
+                                        <strong>{bookingSuccessModal.hotelName}</strong>
+                                    </div>
+                                    <div className="receipt-row">
+                                        <span>Room Number</span>
+                                        <strong>Room {bookingSuccessModal.roomNumber}</strong>
+                                    </div>
+                                    <div className="receipt-row">
+                                        <span>Guest Name</span>
+                                        <strong>{bookingSuccessModal.guestName}</strong>
+                                    </div>
+                                    <div className="receipt-row">
+                                        <span>Check-in Date</span>
+                                        <strong>{bookingSuccessModal.checkInDate}</strong>
+                                    </div>
+                                    <div className="receipt-row">
+                                        <span>Check-out Date</span>
+                                        <strong>{bookingSuccessModal.checkOutDate}</strong>
+                                    </div>
+                                    <div className="receipt-row">
+                                        <span>Rate</span>
+                                        <strong>₹{Math.floor(bookingSuccessModal.price)}/night</strong>
+                                    </div>
+                                    <div className="receipt-row-divider"></div>
+                                    <div className="receipt-row document-proof-row">
+                                        <span>ID Proof ({bookingSuccessModal.idType})</span>
+                                        <div className="proof-attachment">
+                                            {bookingSuccessModal.idFile.type.startsWith('image/') ? (
+                                                <img src={bookingSuccessModal.idFile.dataURL} alt="ID Document" className="receipt-proof-img" onClick={() => window.open(bookingSuccessModal.idFile.dataURL)} title="Click to view full size" />
+                                            ) : (
+                                                <div className="receipt-proof-pdf" onClick={() => window.open(bookingSuccessModal.idFile.dataURL)}>
+                                                    <i className="fa-solid fa-file-pdf"></i>
+                                                    <span>View ID Document</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <button className="confirm-btn-premium" style={{ width: '100%', marginTop: 20 }} onClick={() => setBookingSuccessModal(null)}>
+                                    Back to Search
+                                </button>
                             </div>
                         </div>
                     </div>
