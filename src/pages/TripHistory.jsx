@@ -47,6 +47,8 @@ const TripHistory = () => {
         return () => unsubscribe();
     }, []);
 
+    const [tripToDelete, setTripToDelete] = useState(null);
+
     const handleExplore = (trip) => {
         setSelectedTrip(trip);
         setTimeout(() => {
@@ -54,33 +56,31 @@ const TripHistory = () => {
         }, 100);
     };
 
-    const handleDelete = async (tripId) => {
-        if (window.confirm('Are you sure you want to delete this trip adventure?')) {
-            try {
-                const tripToDelete = trips.find(t => t.id === tripId);
-                const user = auth.currentUser;
-                await deleteDoc(doc(db, 'users', user.uid, 'trips', tripId));
+    const confirmDeleteTrip = (tripId) => {
+        setTripToDelete(tripId);
+    };
 
-                // Update Wallet (Decrement values)
-                if (tripToDelete) {
-                    const walletRef = doc(db, 'users', user.uid, 'wallet', 'summary');
-                    await updateDoc(walletRef, {
-                        // Removing manual decrement of stats to avoid race conditions with the snapshot listener
-                        // totalTrips: increment(-1),
-                        // totalBudget: increment(-(tripToDelete.plannedBudget || 0)),
-                        // totalSpent: increment(-(tripToDelete.actualExpenditure || 0)),
-                        ecopoints: increment(-50) // Deduct the points awarded for adding the trip
-                    });
-                }
+    const executeDelete = async () => {
+        if (!tripToDelete) return;
+        try {
+            const tripObj = trips.find(t => t.id === tripToDelete);
+            const user = auth.currentUser;
+            await deleteDoc(doc(db, 'users', user.uid, 'trips', tripToDelete));
 
-                if (selectedTrip?.id === tripId) {
-                    setSelectedTrip(null);
-                }
-            } catch (error) {
-                console.error("Error deleting trip:", error);
-                // Suppress alert as per user request (sometimes wallet update fails but trip deletes fine)
-                // alert("Failed to delete trip"); 
+            if (tripObj) {
+                const walletRef = doc(db, 'users', user.uid, 'wallet', 'summary');
+                await updateDoc(walletRef, {
+                    ecopoints: increment(-50)
+                }).catch(() => {});
             }
+
+            if (selectedTrip?.id === tripToDelete) {
+                setSelectedTrip(null);
+            }
+        } catch (error) {
+            console.error("Error deleting trip:", error);
+        } finally {
+            setTripToDelete(null);
         }
     };
 
@@ -123,17 +123,58 @@ const TripHistory = () => {
                 </motion.button>
             </section>
 
-            <div className="trips-grid">
-                {trips.map(trip => (
-                    <TripCard
-                        key={trip.id}
-                        trip={trip}
-                        onExplore={handleExplore}
-                        onEdit={() => handleEdit(trip)}
-                        onDelete={() => handleDelete(trip.id)}
-                    />
-                ))}
-            </div>
+            {trips.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '60px 20px', maxWidth: '500px', margin: '40px auto', background: '#fff', borderRadius: '24px', boxShadow: '0 10px 30px rgba(0,0,0,0.05)' }}>
+                    <div style={{ fontSize: '3.5rem', marginBottom: '15px' }}>🎒</div>
+                    <h3 style={{ fontSize: '1.5rem', fontWeight: '700', marginBottom: '10px', color: '#1a1a1a' }}>No Adventures Yet!</h3>
+                    <p style={{ color: '#666', fontSize: '0.95rem', marginBottom: '25px', lineHeight: '1.6' }}>
+                        You haven't recorded any trips yet. Add your past trips or start planning an upcoming one!
+                    </p>
+                    <button 
+                        onClick={() => setIsModalOpen(true)}
+                        style={{ background: '#810000', color: '#fff', border: 'none', padding: '12px 28px', borderRadius: '9999px', fontWeight: '700', cursor: 'pointer', fontSize: '0.95rem' }}
+                    >
+                        Log Your First Trip +
+                    </button>
+                </div>
+            ) : (
+                <div className="trips-grid">
+                    {trips.map(trip => (
+                        <TripCard
+                            key={trip.id}
+                            trip={trip}
+                            onExplore={handleExplore}
+                            onEdit={() => handleEdit(trip)}
+                            onDelete={() => confirmDeleteTrip(trip.id)}
+                        />
+                    ))}
+                </div>
+            )}
+
+            {/* Custom Delete Confirmation Modal */}
+            {tripToDelete && (
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(5px)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+                    <div style={{ background: '#fff', padding: '30px', borderRadius: '20px', maxWidth: '400px', width: '100%', textAlign: 'center', boxShadow: '0 20px 40px rgba(0,0,0,0.2)' }}>
+                        <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>🗑️</div>
+                        <h3 style={{ fontSize: '1.3rem', fontWeight: '700', marginBottom: '10px' }}>Delete Adventure?</h3>
+                        <p style={{ color: '#666', fontSize: '0.9rem', marginBottom: '20px' }}>Are you sure you want to delete this trip? This action cannot be undone.</p>
+                        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                            <button 
+                                onClick={() => setTripToDelete(null)}
+                                style={{ padding: '10px 20px', borderRadius: '10px', border: '1px solid #ddd', background: '#f8f9fa', fontWeight: '600', cursor: 'pointer' }}
+                            >
+                                Cancel
+                            </button>
+                            <button 
+                                onClick={executeDelete}
+                                style={{ padding: '10px 20px', borderRadius: '10px', border: 'none', background: '#dc2626', color: '#fff', fontWeight: '600', cursor: 'pointer' }}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {selectedTrip && (
                 <section ref={detailsRef} className="trip-details-expanded">

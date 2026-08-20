@@ -10,6 +10,7 @@ const Signup = () => {
     const [email, setEmail] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -108,14 +109,14 @@ const LockIcon = () => (
                 <svg className="auth-brand-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2L2 22h20L12 2z"></path><path d="M12 22V8"></path><path d="M6 14h12"></path>
                 </svg>
-                <h1 className="auth-brand-title">Tamil Nadu<br />Corporate Travel</h1>
-                <div className="auth-brand-subtitle">Explore | Manage | Connect</div>
+                <h1 className="auth-brand-title">Tamil Nadu<br />TNVerse</h1>
+                <div className="auth-brand-subtitle">Explore | Discover | Connect</div>
             </div>
 
             <div className="auth-card">
                 <div className="auth-header">
                     <h2 className="auth-title">Create Account.</h2>
-                    <p className="auth-subtitle">Join us to explore amazing travel experiences.</p>
+                    <p className="auth-subtitle">Join TNVerse to explore amazing Tamil Nadu travel experiences.</p>
                 </div>
                 {error && <div className="error-message">{error}</div>}
                 
@@ -144,7 +145,7 @@ const LockIcon = () => (
                                 id="email" 
                                 className="auth-input"
                                 type="email"
-                                placeholder="jane@company.com"
+                                placeholder="jane@gmail.com"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -160,7 +161,7 @@ const LockIcon = () => (
                                 id="phone" 
                                 className="auth-input"
                                 type="tel"
-                                placeholder="+1 555-0000"
+                                placeholder="+91 98765 43210"
                                 value={phoneNumber}
                                 onChange={(e) => setPhoneNumber(e.target.value)}
                                 required
@@ -169,13 +170,18 @@ const LockIcon = () => (
                     </div>
                     
                     <div className="auth-input-group">
-                        <label className="auth-label" htmlFor="password">Password</label>
+                        <div className="auth-label-row">
+                            <label className="auth-label" htmlFor="password">Password</label>
+                            <span style={{ fontSize: '0.8rem', color: '#810000', cursor: 'pointer', fontWeight: '600' }} onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? 'Hide' : 'Show'}
+                            </span>
+                        </div>
                         <div className="auth-input-wrapper">
                             <LockIcon />
                             <input 
                                 id="password" 
                                 className="auth-input"
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="••••••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}

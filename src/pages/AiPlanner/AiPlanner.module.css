@@ -349,3 +349,19 @@
         min-height: 80vh;
     }
 }
+
+/* Small phones */
+@media (max-width: 480px) {
+    .appContainer {
+        padding: 0;
+    }
+
+    .sidebar {
+        padding: 12px;
+    }
+
+    .mainContent {
+        padding: 12px;
+        min-height: 60vh;
+    }
+}

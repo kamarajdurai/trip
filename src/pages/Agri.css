@@ -760,10 +760,9 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: #005f6b z-index: 2000;
+    background: rgba(0, 95, 107, 0.85);
+    z-index: 2000;
     display: flex;
-    justify-content: center;
-    align-items: center;
     justify-content: center;
     align-items: center;
     padding: 20px;

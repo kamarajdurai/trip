@@ -109,3 +109,24 @@
         justify-content: center;
     }
 }
+
+@media (max-width: 480px) {
+    .main-footer {
+        padding: 60px 5% 30px;
+        margin-top: 50px;
+    }
+
+    .footer-content {
+        gap: 35px;
+    }
+
+    .footer-links {
+        flex-direction: column;
+        gap: 30px;
+        align-items: center;
+    }
+
+    .footer-logo {
+        font-size: 1.6rem;
+    }
+}

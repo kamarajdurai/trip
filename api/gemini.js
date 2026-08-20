@@ -18,6 +18,49 @@ export default async function handler(req, res) {
         const { prompt } = body || {};
         if (!prompt) return res.status(400).json({ error: "Prompt is required" });
 
+        // Try OpenRouter API first if available
+        const openRouterKey = process.env.OPENROUTER_API_KEY || "";
+
+        if (openRouterKey) {
+            const openRouterModels = [
+                "google/gemini-2.0-flash-lite-001",
+                "google/gemini-2.0-flash-001",
+                "meta-llama/llama-3.3-70b-instruct:free",
+                "deepseek/deepseek-r1:free",
+                "google/gemini-flash-1.5"
+            ];
+
+            for (const modelName of openRouterModels) {
+                try {
+                    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                        method: "POST",
+                        headers: {
+                            "Authorization": `Bearer ${openRouterKey}`,
+                            "HTTP-Referer": "http://localhost:5173",
+                            "X-Title": "TN AI Travel Planner",
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify({
+                            model: modelName,
+                            messages: [{ role: "user", content: prompt }]
+                        })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok && data.choices?.[0]?.message?.content) {
+                        return res.status(200).json({
+                            text: data.choices[0].message.content,
+                            model: `OpenRouter (${modelName})`
+                        });
+                    } else if (data?.error?.message) {
+                        console.error(`OpenRouter model ${modelName} error:`, data.error.message);
+                    }
+                } catch (e) {
+                    console.error(`OpenRouter fetch error for ${modelName}:`, e.message);
+                }
+            }
+        }
+
         // Gather all API keys from environment variables dynamically (GEMINI_API_KEY, GEMINI_API_KEY_2, ...)
         const apiKeys = [];
         if (process.env.GEMINI_API_KEY) {
@@ -33,22 +76,26 @@ export default async function handler(req, res) {
             return res.status(500).json({ error: "API Key missing. Please configure GEMINI_API_KEY in Vercel settings." });
         }
 
-        // Models to try in order of preference
+        // Flash models available on Gemini API
         const modelsToTry = [
-            "gemini-2.5-flash",
-            "gemini-1.5-flash"
+            "gemini-2.0-flash",
+            "gemini-2.0-flash-lite",
+            "gemini-1.5-flash-002",
+            "gemini-2.5-flash"
         ];
 
         let lastError = null;
         let successfulResponse = null;
 
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
         // Try models sequentially
         for (const modelName of modelsToTry) {
-            // For each model, try to use API keys in round-robin/random starting order
             const startIndex = Math.floor(Math.random() * apiKeys.length);
             let attempts = 0;
+            const maxAttempts = apiKeys.length * 2; // Allow up to 2 retries per key for rate limits
 
-            while (attempts < apiKeys.length) {
+            while (attempts < maxAttempts) {
                 const currentKeyIndex = (startIndex + attempts) % apiKeys.length;
                 const apiKey = apiKeys[currentKeyIndex];
 
@@ -63,21 +110,35 @@ export default async function handler(req, res) {
                         model: modelName,
                         keyIndexUsed: currentKeyIndex
                     };
-                    break; // Successfully got response, exit the key rotation loop
+                    break; // Successfully got response, exit key loop
                 } catch (e) {
-                    lastError = e;
-                    console.error(`Attempt with model ${modelName} and Key Index ${currentKeyIndex} failed:`, e.message);
+                    console.error(`Attempt with model ${modelName} (Key index ${currentKeyIndex}) failed:`, e.message);
 
-                    // Check if it is a rate limit (429), quota issue, or transient error. If so, failover to the next key.
-                    const isRateLimitOrQuota = e.status === 429 || e.status === 403 || e.message?.includes("quota") || e.message?.includes("limit");
+                    const isRateLimitOrQuota = e.status === 429 || e.status === 403 || e.message?.includes("quota") || e.message?.includes("limit") || e.message?.includes("429") || e.message?.includes("RESOURCE_EXHAUSTED");
+                    const isNotFound = e.status === 404 || e.message?.includes("404") || e.message?.includes("not found");
+                    const isLimitZero = e.message?.includes("limit: 0");
+
+                    // Prioritize quota/rate limit errors over 404 or limit:0 errors
+                    if (isRateLimitOrQuota || !lastError || (!isNotFound && !isLimitZero)) {
+                        lastError = e;
+                    }
+
+                    if (isLimitZero || isNotFound) {
+                        // Model not allowed or not found for this key tier, skip to next model
+                        break;
+                    }
+
                     const isTransientServerError = e.status >= 500;
 
                     if (isRateLimitOrQuota || isTransientServerError) {
                         attempts++;
-                        continue;
+                        if (attempts < maxAttempts) {
+                            // Pause briefly (2.5s) to allow rate-limit window to clear
+                            await sleep(2500);
+                            continue;
+                        }
                     }
 
-                    // For other errors (e.g. invalid model name/bad request), don't try other keys for this model
                     break;
                 }
             }
@@ -87,14 +148,24 @@ export default async function handler(req, res) {
             }
         }
 
-        // If all models and keys failed
-        return res.status(lastError?.status || 500).json({
-            error: lastError?.message || "All models and API keys failed to respond",
-            suggestion: "If you see status 429 or 403, your API keys may have reached their limits. Check your Vercel environment variables or Google AI Studio billing/plan.",
+        // Extract friendly error message
+        let userErrorMsg = "Gemini API rate limit or quota exceeded. Please wait a few seconds and try again.";
+        if (lastError?.message) {
+            if (lastError.message.includes("429") || lastError.message.includes("Quota") || lastError.message.includes("quota") || lastError.message.includes("limit") || lastError.message.includes("RESOURCE_EXHAUSTED")) {
+                userErrorMsg = "Gemini API rate limit reached. Please wait a few seconds before generating another itinerary.";
+            } else if (lastError.message.includes("404") || lastError.message.includes("not found")) {
+                userErrorMsg = "Gemini API service temporarily unavailable. Please try again in a few moments.";
+            } else {
+                userErrorMsg = lastError.message;
+            }
+        }
+
+        return res.status(lastError?.status || 429).json({
+            error: userErrorMsg,
             diagnostic: {
                 attemptedModels: modelsToTry,
                 totalKeysConfigured: apiKeys.length,
-                lastFailureStatus: lastError?.status
+                lastFailureMessage: lastError?.message
             }
         });
 

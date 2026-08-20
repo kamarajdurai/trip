@@ -5,6 +5,31 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { usePageTitle, usePageStyle } from '../hooks';
 
+class GuideParticle {
+    constructor(width, height) {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.4;
+        this.vy = (Math.random() - 0.5) * 0.4;
+        this.size = Math.random() * 2 + 1;
+    }
+
+    update(width, height) {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = 'rgba(255, 132, 0, 0.6)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
 const Guide = () => {
     const { t } = useTranslation();
     usePageTitle('Travel Guide Booking | TN Verse');
@@ -30,35 +55,10 @@ const Guide = () => {
         const particleCount = 40;
         let animationFrameId;
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.4;
-                this.vy = (Math.random() - 0.5) * 0.4;
-                this.size = Math.random() * 2 + 1;
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-            }
-
-            draw() {
-                ctx.fillStyle = 'rgba(255, 132, 0, 0.6)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
         const initParticles = () => {
             particles = [];
             for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
+                particles.push(new GuideParticle(canvas.width, canvas.height));
             }
         };
 
@@ -66,8 +66,8 @@ const Guide = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
+                particles[i].update(canvas.width, canvas.height);
+                particles[i].draw(ctx);
 
                 // Draw lines
                 for (let j = i; j < particles.length; j++) {
@@ -200,12 +200,21 @@ const Guide = () => {
     const handleBookingSubmit = (e) => {
         e.preventDefault();
         const booking = {
+            id: Date.now(),
+            guideId: currentGuide.id,
             guideName: currentGuide.name,
             date: bookingDate,
             time: bookingTime,
             guests: bookingGuests,
-            userName: bookingName
+            userName: bookingName,
+            contact: bookingContact,
+            status: 'Confirmed'
         };
+
+        const existingBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+        existingBookings.push(booking);
+        localStorage.setItem('bookings', JSON.stringify(existingBookings));
+
         setIsBookingModalOpen(false);
         setConfirmationData(booking);
         setIsConfirmationModalOpen(true);
@@ -296,9 +305,14 @@ const Guide = () => {
                                                 <i className="fa-solid fa-phone"></i> Call
                                             </button>
                                         </div>
-                                        <Link to={`/guide/${guide.id}`} className="btn-book-premium" style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
-                                            {t('guide.view_profile')}
-                                        </Link>
+                                         <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                                            <button onClick={() => openBookingModal(guide)} className="btn-book-premium" style={{ flex: 1, border: 'none', cursor: 'pointer' }}>
+                                                Reserve
+                                            </button>
+                                            <Link to={`/guide/${guide.id}`} className="btn-action-outline" style={{ flex: 1, textAlign: 'center', textDecoration: 'none', display: 'inline-block', lineHeight: '36px' }}>
+                                                {t('guide.view_profile')}
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             ))

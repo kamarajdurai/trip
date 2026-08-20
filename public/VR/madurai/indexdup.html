@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Madurai Meenakshi Amman Temple - Virtual Reality Tour</title>
+  <style>
+    body { margin: 0; padding: 0; overflow: hidden; font-family: 'Inter', sans-serif; }
+    #street-view { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    .top-settings-wrapper { position: absolute; top: 15px; right: 15px; z-index: 1002; }
+    .settings-capsule {
+      background: white; padding: 6px 10px; border-radius: 50px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.15); display: flex; gap: 8px;
+      align-items: center; border: 1px solid rgba(220,38,38,0.2);
+    }
+    .settings-capsule select, .settings-capsule button {
+      background: white; color: #dc2626; border: none; padding: 8px 15px;
+      border-radius: 40px; font-weight: bold; cursor: pointer;
+      font-size: 13px; transition: all 0.3s; outline: none;
+    }
+    #audio-control-btn { background: #dc2626 !important; color: white !important; min-width: 140px; }
+    #fullscreen-btn { background: #dc2626 !important; color: white !important; }
+    #fullscreen-btn:hover, #audio-control-btn:hover { opacity: 0.9; transform: scale(1.05); }
+    .top-nav-wrapper {
+      position: absolute; top: 15px; left: 15px; z-index: 1002;
+      display: flex; gap: 10px; pointer-events: none;
+    }
+    #location-buttons { pointer-events: auto; display: flex; flex-direction: column; gap: 8px; }
+    #location-buttons button {
+      background: rgba(255,255,255,0.95); color: #dc2626;
+      border: 2.5px solid #dc2626; padding: 8px 16px; border-radius: 12px;
+      font-weight: bold; cursor: pointer; white-space: nowrap; height: 40px;
+      display: flex; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      transition: all 0.2s; font-size: 13px; min-width: 160px;
+    }
+    #location-buttons button:hover { background: #dc2626; color: white; transform: scale(1.03); }
+    #vr-splash {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: linear-gradient(135deg, #1a0000, #4a0000, #7c0000);
+      z-index: 10000; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; text-align: center;
+      transition: opacity 0.8s ease;
+    }
+    .splash-icon { font-size: 5rem; margin-bottom: 1rem; animation: float 3s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-15px)} }
+    .splash-content h1 { color: #fbbf24; font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .splash-content p { color: #fca5a5; font-size: 1rem; max-width: 400px; margin: 0 auto 2rem; }
+    .splash-badge {
+      display: inline-block; background: rgba(251,191,36,0.15);
+      border: 1px solid #fbbf24; color: #fbbf24;
+      padding: 0.3rem 1rem; border-radius: 50px;
+      font-size: 0.8rem; font-weight: 600; margin-bottom: 1.5rem;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    #start-vr-btn {
+      padding: 15px 40px; background: linear-gradient(135deg, #dc2626, #fbbf24);
+      color: white; border: none; border-radius: 30px; font-size: 1.2rem;
+      font-weight: bold; cursor: pointer; box-shadow: 0 10px 30px rgba(220,38,38,0.5);
+      transition: transform 0.2s;
+    }
+    #start-vr-btn:hover { transform: scale(1.05); }
+    .back-btn {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
+      color: white; padding: 10px 25px; border-radius: 50px;
+      text-decoration: none; font-size: 0.9rem; transition: background 0.3s;
+    }
+    .custom-label {
+      position: absolute; background: white; color: #333; padding: 16px 24px;
+      font-size: 18px; border-radius: 16px; transform: translate(-50%,-50%);
+      top: 50%; left: 50%; z-index: 1001; display: none;
+      pointer-events: none; border: 3px solid #dc2626;
+      box-shadow: 0 10px 30px rgba(220,38,38,0.3); text-align: center;
+      min-width: 260px; max-width: 420px;
+    }
+    .custom-label .label-title { color: #dc2626; font-weight: 800; font-size: 20px; display: block; margin-bottom: 8px; }
+    .custom-label .label-desc { font-size: 14px; color: #555; line-height: 1.6; }
+    #back-home {
+      position: absolute; bottom: 20px; right: 20px; z-index: 1002;
+      background: rgba(255,255,255,0.9); border: 2px solid #dc2626;
+      color: #dc2626; padding: 10px 20px; border-radius: 30px;
+      font-weight: bold; font-size: 13px; cursor: pointer;
+      text-decoration: none; transition: all 0.3s;
+    }
+    #back-home:hover { background: #dc2626; color: white; }
+  </style>
+</head>
+<body>
+
+  <div id="vr-splash">
+    <div class="splash-content">
+      <div class="splash-icon">🕌</div>
+      <div class="splash-badge">One of India's Greatest Temples</div>
+      <h1>Meenakshi Amman Temple</h1>
+      <p>Madurai's crown jewel — 14 towering gopurams covered in 33,000 colorful sculptures. Enter the immersive virtual tour of this 2500-year-old wonder!</p>
+      <button id="start-vr-btn">▶ Begin Virtual Tour</button>
+    </div>
+    <a href="../index.html" class="back-btn">← Back to All Places</a>
+  </div>
+
+  <div class="top-nav-wrapper">
+    <div id="location-buttons">
+      <button onclick="goTo('south_tower')" id="btn-south_tower">🗼 South Gopuram</button>
+      <button onclick="goTo('main_entrance')" id="btn-main_entrance">🚪 Main Entrance</button>
+      <button onclick="goTo('golden_lotus')" id="btn-golden_lotus">🌸 Golden Lotus Tank</button>
+      <button onclick="goTo('thousand_pillar')" id="btn-thousand_pillar">🏛️ 1000 Pillar Hall</button>
+      <button onclick="goTo('sanctum')" id="btn-sanctum">✨ Main Sanctum</button>
+    </div>
+  </div>
+
+  <div class="top-settings-wrapper">
+    <div class="settings-capsule">
+      <select id="language-switcher">
+        <option value="en">English</option>
+        <option value="ta">தமிழ்</option>
+        <option value="hi">हिन्दी</option>
+        <option value="kn">ಕನ್ನಡ</option>
+      </select>
+      <button id="audio-control-btn">🔊 Audio Enabled</button>
+      <button id="fullscreen-btn">⛶ Fullscreen</button>
+    </div>
+  </div>
+
+  <div id="street-view"></div>
+
+  <div class="custom-label" id="south_tower-label">
+    <span class="label-title">South Gopuram</span>
+    <div class="label-desc">The tallest of all 14 gopurams, rising 51.9 meters! Each gopuram is covered with thousands of brightly painted stucco figures of gods, demons, and mythical creatures. Built in the 16th century by Nayaka kings.</div>
+  </div>
+  <div class="custom-label" id="main_entrance-label">
+    <span class="label-title">Main Entrance</span>
+    <div class="label-desc">Welcome to Meenakshi Amman Temple! Dedicated to Goddess Meenakshi (Parvati) and Lord Sundareswarar (Shiva). The temple complex covers 14.5 acres and is visited by 15,000 pilgrims daily.</div>
+  </div>
+  <div class="custom-label" id="golden_lotus-label">
+    <span class="label-title">Porthamarai Kulam (Golden Lotus Tank)</span>
+    <div class="label-desc">This sacred golden lotus tank is said to test literary merit — legend says that poems were placed here, and only great works would float! The tank glitters beautifully under the golden light.</div>
+  </div>
+  <div class="custom-label" id="thousand_pillar-label">
+    <span class="label-title">Hall of 1000 Pillars</span>
+    <div class="label-desc">Built in 1569 AD, this magnificent hall has 985 ornately carved pillars — each one unique! When tapped, the musical pillars produce different musical notes. A true marvel of ancient engineering.</div>
+  </div>
+  <div class="custom-label" id="sanctum-label">
+    <span class="label-title">Main Sanctum — Meenakshi Shrine</span>
+    <div class="label-desc">The inner sanctum houses Goddess Meenakshi with emerald green skin — representing fertility and prosperity. The fragrance of jasmine flowers and camphor fills this sacred space.</div>
+  </div>
+
+  <audio id="south_tower-audio" preload="auto"></audio>
+  <audio id="main_entrance-audio" preload="auto"></audio>
+  <audio id="golden_lotus-audio" preload="auto"></audio>
+  <audio id="thousand_pillar-audio" preload="auto"></audio>
+  <audio id="sanctum-audio" preload="auto"></audio>
+
+  <a href="../index.html" id="back-home">🏠 All Places</a>
+
+  <script>
+    let panorama=null,panoramaReady=false,audioContextLoaded=false,currentActiveLocation=null,audioState='paused';
+    const audioBtn=document.getElementById('audio-control-btn');
+    function updateAudioButton(){
+      if(audioState==='playing'){audioBtn.textContent='🔊 Audio Enabled';audioBtn.style.background='#dc2626';audioBtn.style.color='white';}
+      else{audioBtn.textContent='🔇 Audio Disabled';audioBtn.style.background='white';audioBtn.style.color='#dc2626';}
+    }
+    function toggleAudio(){
+      if(audioState==='playing'){window.speechSynthesis.cancel();document.querySelectorAll('audio').forEach(a=>a.pause());audioState='paused';}
+      else{playLocationAudio(currentActiveLocation);}
+      updateAudioButton();
+    }
+    audioBtn.addEventListener('click',toggleAudio);
+
+    function getTranslations(){
+      return {
+        south_tower:{
+          en:{title:'South Gopuram',desc:'The tallest of all 14 gopurams, rising 51.9 meters! Each gopuram is covered with thousands of brightly painted stucco figures of gods, demons, and mythical creatures. Built by Nayaka kings in the 16th century.',nav:'🗼 South Gopuram'},
+          ta:{title:'தென் கோபுரம்',desc:'14 கோபுரங்களிலேயே மிக உயரமான தென் கோபுரம் 51.9 மீட்டர் உயரமுள்ளது! ஒவ்வொரு கோபுரமும் ஆயிரக்கணக்கான வண்ணமயமான தெய்வ சிற்பங்களால் அலங்கரிக்கப்பட்டுள்ளது.',nav:'🗼 தென் கோபுரம்'},
+          hi:{title:'दक्षिण गोपुरम',desc:'14 गोपुरमों में सबसे ऊंचा, 51.9 मीटर! प्रत्येक गोपुरम हजारों रंगीन देव, दानव और पौराणिक प्राणियों की मूर्तियों से ढका है।',nav:'🗼 दक्षिण गोपुरम'},
+          kn:{title:'ದಕ್ಷಿಣ ಗೋಪುರ',desc:'14 ಗೋಪುರಗಳಲ್ಲಿ ಅತ್ಯಂತ ಎತ್ತರವಾದ, 51.9 ಮೀಟರ್! ಪ್ರತಿ ಗೋಪುರ ಸಾವಿರಾರು ವರ್ಣರಂಜಿತ ಶಿಲ್ಪಗಳಿಂದ ತುಂಬಿದೆ.',nav:'🗼 ದಕ್ಷಿಣ ಗೋಪುರ'}
+        },
+        main_entrance:{
+          en:{title:'Main Entrance',desc:'Welcome to Meenakshi Amman Temple! Dedicated to Goddess Meenakshi and Lord Sundareswarar. The 14.5 acre complex is visited by 15,000 pilgrims daily and earns crores in offerings annually.',nav:'🚪 Main Entrance'},
+          ta:{title:'பிரதான நுழைவாயில்',desc:'மீனாட்சி அம்மன் கோவிலுக்கு வரவேற்கிறோம்! தினமும் 15,000 பக்தர்கள் இங்கு வருகிறார்கள். 14.5 ஏக்கர் பரந்த இந்த கோவில் வளாகம் அதிசயங்கள் நிறைந்தது.',nav:'🚪 பிரதான நுழைவாயில்'},
+          hi:{title:'मुख्य प्रवेश द्वार',desc:'मीनाक्षी अम्मन मंदिर में आपका स्वागत! प्रतिदिन 15,000 तीर्थयात्री इस 14.5 एकड़ परिसर में आते हैं।',nav:'🚪 मुख्य प्रवेश द्वार'},
+          kn:{title:'ಮುಖ್ಯ ಪ್ರವೇಶ ದ್ವಾರ',desc:'ಮೀನಾಕ್ಷಿ ಅಮ್ಮನ್ ದೇವಾಲಯಕ್ಕೆ ಸ್ವಾಗತ! ದಿನಕ್ಕೆ 15,000 ಯಾತ್ರಿಕರು ಬರುತ್ತಾರೆ.',nav:'🚪 ಮುಖ್ಯ ಪ್ರವೇಶ ದ್ವಾರ'}
+        },
+        golden_lotus:{
+          en:{title:'Golden Lotus Tank',desc:'The sacred Porthamarai Kulam (Golden Lotus Tank) is said to test literary merit — legend says only truly great poems would float on its waters! A serene and mystical spot.',nav:'🌸 Golden Lotus Tank'},
+          ta:{title:'பொற்றாமரை குளம்',desc:'இந்த புனித குளத்தில் கவிதைகள் சோதிக்கப்பட்டன என்று தலபுராணம் கூறுகிறது — உண்மையான சிறந்த கவிதைகள் மட்டுமே மிதந்தன! அழகான மற்றும் ஆன்மிக இடம்.',nav:'🌸 பொற்றாமரை குளம்'},
+          hi:{title:'स्वर्ण कमल तालाब',desc:'पवित्र पोर्थामरई कुलम में किंवदंती है कि केवल महान कविताएं ही इसके जल पर तैरती थीं! एक शांत और रहस्यमय स्थान।',nav:'🌸 स्वर्ण कमल तालाब'},
+          kn:{title:'ಚಿನ್ನದ ತಾವರೆ ತೊಟ್ಟಿ',desc:'ಪವಿತ್ರ ಪೋರ್ತಾಮರೈ ಕುಲಂ ಸಾಹಿತ್ಯಿಕ ಅರ್ಹತೆಯನ್ನು ಪರೀಕ್ಷಿಸುತ್ತದೆ ಎನ್ನಲಾಗುತ್ತದೆ!',nav:'🌸 ಚಿನ್ನದ ತಾವರೆ ತೊಟ್ಟಿ'}
+        },
+        thousand_pillar:{
+          en:{title:'Hall of 1000 Pillars',desc:'Built in 1569 AD, this magnificent hall has 985 ornately carved pillars — each unique! The musical pillars produce different notes when tapped. A UNESCO marvel of ancient engineering.',nav:'🏛️ 1000 Pillar Hall'},
+          ta:{title:'ஆயிரக்கால் மண்டபம்',desc:'1569 ஆம் ஆண்டு கட்டப்பட்ட இந்த மண்டபத்தில் 985 அழகாக செதுக்கப்பட்ட தூண்கள் உள்ளன. இசை தூண்கள் தட்டும்போது வெவ்வேறு இசை நாதங்களை ஒலிக்கின்றன!',nav:'🏛️ ஆயிரக்கால் மண்டபம்'},
+          hi:{title:'हजार स्तंभ मंडपम',desc:'1569 ई. में निर्मित, इस भव्य हॉल में 985 खूबसूरती से नक्काशीदार खंभे हैं। संगीत स्तंभ टैप करने पर विभिन्न संगीत नोट्स उत्पन्न करते हैं!',nav:'🏛️ हजार स्तंभ मंडपम'},
+          kn:{title:'ಸಾವಿರ ಕಂಬದ ಮಂಟಪ',desc:'1569 ರಲ್ಲಿ ನಿರ್ಮಿಸಲಾಯಿತು, 985 ವಿಶಿಷ್ಟ ಕಂಬಗಳನ್ನು ಹೊಂದಿದೆ. ಸಂಗೀತ ಕಂಬಗಳು ತಟ್ಟಿದಾಗ ವಿವಿಧ ನಾದಗಳನ್ನು ಉತ್ಪಾದಿಸುತ್ತವೆ!',nav:'🏛️ ಸಾವಿರ ಕಂಬದ ಮಂಟಪ'}
+        },
+        sanctum:{
+          en:{title:'Main Sanctum — Meenakshi Shrine',desc:'The inner sanctum houses Goddess Meenakshi with emerald green skin, representing fertility and prosperity. The fragrance of jasmine flowers and camphor fills this sacred space — a truly divine experience.',nav:'✨ Main Sanctum'},
+          ta:{title:'கருவறை — மீனாட்சி அம்மன்',desc:'கருவறையில் மரகத பச்சை நிற மீனாட்சி தேவி வீற்றிருக்கிறாள். மல்லிகை பூவின் மணமும் கற்பூரத்தின் நறுமணமும் இந்த புனித இடத்தை நிறைக்கின்றன.',nav:'✨ கருவறை'},
+          hi:{title:'मुख्य गर्भगृह — मीनाक्षी मंदिर',desc:'गर्भगृह में पन्ना हरे रंग की त्वचा वाली देवी मीनाक्षी विराजमान हैं। चमेली के फूलों और कपूर की खुशबू इस पवित्र स्थान को भर देती है।',nav:'✨ मुख्य गर्भगृह'},
+          kn:{title:'ಮುಖ್ಯ ಗರ್ಭಗುಡಿ — ಮೀನಾಕ್ಷಿ ಗುಡಿ',desc:'ಗರ್ಭಗುಡಿಯಲ್ಲಿ ಹಸಿರು ಬಣ್ಣದ ಚರ್ಮದ ದೇವಿ ಮೀನಾಕ್ಷಿ ನೆಲೆಸಿದ್ದಾಳೆ. ಮಲ್ಲಿಗೆ ಹೂವಿನ ಪರಿಮಳ ಈ ಪವಿತ್ರ ಸ್ಥಳವನ್ನು ತುಂಬುತ್ತದೆ.',nav:'✨ ಮುಖ್ಯ ಗರ್ಭಗುಡಿ'}
+        }
+      };
+    }
+
+    function speakDescription(locationId,lang){
+      const translations=getTranslations();
+      if(!translations[locationId]||!translations[locationId][lang])return;
+      window.speechSynthesis.cancel();
+      const text=translations[locationId][lang].desc;
+      const utterance=new SpeechSynthesisUtterance(text);
+      const langMap={en:['en-IN','en-US'],ta:['ta-IN'],hi:['hi-IN'],kn:['kn-IN']};
+      const voices=window.speechSynthesis.getVoices();
+      const targetLangs=langMap[lang]||['en-US'];
+      const selectedVoice=voices.find(v=>targetLangs.some(l=>v.lang.startsWith(l)));
+      if(selectedVoice)utterance.voice=selectedVoice;
+      utterance.lang=targetLangs[0];utterance.rate=0.9;
+      utterance.onstart=()=>{audioState='playing';updateAudioButton();};
+      utterance.onend=()=>{audioState='paused';updateAudioButton();};
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function playLocationAudio(locationId){
+      if(!locationId)return;
+      window.speechSynthesis.cancel();
+      document.querySelectorAll('audio').forEach(a=>{a.pause();a.currentTime=0;});
+      const lang=document.getElementById('language-switcher').value;
+      speakDescription(locationId,lang);
+    }
+
+    document.getElementById('start-vr-btn').addEventListener('click',()=>{
+      const splash=document.getElementById('vr-splash');
+      splash.style.opacity='0';
+      setTimeout(()=>{splash.style.display='none';},800);
+      currentActiveLocation='main_entrance';audioContextLoaded=true;
+      setTimeout(()=>{playLocationAudio('main_entrance');},300);
+    });
+
+    document.getElementById('language-switcher').addEventListener('change',function(){
+      const lang=this.value;const trans=getTranslations();
+      Object.keys(trans).forEach(id=>{
+        const label=document.getElementById(`${id}-label`);
+        if(label){label.querySelector('.label-title').textContent=trans[id][lang].title;label.querySelector('.label-desc').textContent=trans[id][lang].desc;}
+        const navBtn=document.getElementById(`btn-${id}`);
+        if(navBtn)navBtn.textContent=trans[id][lang].nav;
+      });
+      if(audioState==='playing')playLocationAudio(currentActiveLocation);
+    });
+
+    function initPanorama(){
+      const locations=[
+        {id:'main_entrance', location:{lat:9.9196,lng:78.1193},heading:90},
+        {id:'south_tower',   location:{lat:9.9187,lng:78.1193},heading:0},
+        {id:'golden_lotus',  location:{lat:9.9196,lng:78.1190},heading:270},
+        {id:'thousand_pillar',location:{lat:9.9200,lng:78.1195},heading:45},
+        {id:'sanctum',       location:{lat:9.9196,lng:78.1192},heading:180}
+      ];
+      const svService=new google.maps.StreetViewService();
+      svService.getPanorama({location:locations[0].location,radius:200},(data,status)=>{
+        if(status==='OK'){
+          panorama=new google.maps.StreetViewPanorama(document.getElementById('street-view'),{
+            pano:data.location.pano,pov:{heading:locations[0].heading,pitch:5},
+            visible:true,addressControl:false,linksControl:true,showRoadLabels:false,fullscreenControl:false
+          });
+          panorama.addListener('pov_changed',()=>{
+            const pov=panorama.getPov();const pos=panorama.getPosition();
+            let bestLoc=null,minDistance=Infinity;
+            locations.forEach(loc=>{
+              if(google.maps.geometry){
+                const distance=google.maps.geometry.spherical.computeDistanceBetween(pos,new google.maps.LatLng(loc.location.lat,loc.location.lng));
+                const headingDiff=Math.abs((pov.heading%360)-loc.heading);
+                const isLookingAt=headingDiff<=40||(360-headingDiff)<=40;
+                const isClose=distance<=30;
+                const label=document.getElementById(loc.id+'-label');
+                if(label)label.style.display=(isClose&&isLookingAt)?'block':'none';
+                if(distance<minDistance){minDistance=distance;bestLoc=loc.id;}
+              }
+            });
+            if(minDistance<=30&&bestLoc&&bestLoc!==currentActiveLocation){
+              currentActiveLocation=bestLoc;
+              if(audioContextLoaded&&audioState==='playing')playLocationAudio(bestLoc);
+            }
+          });
+          panoramaReady=true;
+        }else{
+          svService.getPanorama({location:{lat:9.9196,lng:78.1193},radius:500},(d2,s2)=>{
+            if(s2==='OK'){
+              panorama=new google.maps.StreetViewPanorama(document.getElementById('street-view'),{pano:d2.location.pano,pov:{heading:90,pitch:5},visible:true,addressControl:false,fullscreenControl:false});
+              panoramaReady=true;
+            }
+          });
+        }
+      });
+    }
+
+    function goTo(place){
+      const locations={
+        main_entrance:{lat:9.9196,lng:78.1193,heading:90},
+        south_tower:  {lat:9.9187,lng:78.1193,heading:0},
+        golden_lotus: {lat:9.9196,lng:78.1190,heading:270},
+        thousand_pillar:{lat:9.9200,lng:78.1195,heading:45},
+        sanctum:      {lat:9.9196,lng:78.1192,heading:180}
+      };
+      const target=locations[place];
+      if(!panoramaReady||!target)return;
+      currentActiveLocation=place;
+      const svService=new google.maps.StreetViewService();
+      svService.getPanorama({location:target,radius:300},(data,status)=>{
+        if(status==='OK'){panorama.setPano(data.location.pano);panorama.setPov({heading:target.heading,pitch:5,zoom:1});}
+      });
+      if(audioContextLoaded)playLocationAudio(place);
+    }
+
+    document.getElementById('fullscreen-btn').addEventListener('click',()=>{
+      if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(err=>console.log(err));}
+      else{document.exitFullscreen();}
+    });
+    document.addEventListener('fullscreenchange',()=>{
+      document.getElementById('fullscreen-btn').innerHTML=document.fullscreenElement?'⛶ Exit Fullscreen':'⛶ Fullscreen';
+    });
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATew-TdTHzI9IZjizM8dOJxMBXPB6LRfE&libraries=geometry&callback=initPanorama" async defer></script>
+</body>
+</html>

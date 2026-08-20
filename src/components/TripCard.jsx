@@ -21,8 +21,9 @@ const TripCard = ({ trip, onExplore, onEdit, onDelete }) => {
                     <span><i className="fa-solid fa-indian-rupee-sign"></i> {trip.actualExpenditure}</span>
                 </div>
                 <div className="trip-card-actions">
-                    <button className="btn-details">See Details</button>
-                    <button className="btn-explore">Explore <i className="fa-solid fa-arrow-right"></i></button>
+                    <button className="btn-explore" style={{ width: '100%', justifyContent: 'center' }}>
+                        View Adventure <i className="fa-solid fa-arrow-right"></i>
+                    </button>
                 </div>
             </div>
         </div>

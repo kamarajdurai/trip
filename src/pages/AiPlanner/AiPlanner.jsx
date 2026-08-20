@@ -3,8 +3,8 @@ import styles from './AiPlanner.module.css';
 import { marked } from 'marked';
 import html2pdf from 'html2pdf.js';
 
-const GEMINI_KEY = "AIzaSyDovzH1o_DjmA3_yYeNGt_Zi-k_RhKLjGI";
-const WEATHER_KEY = "b2c5b477f503ea54bffa1455a210ff49";
+const GEMINI_KEY = import.meta.env?.VITE_GEMINI_API_KEY || "";
+const WEATHER_KEY = import.meta.env?.VITE_WEATHER_API_KEY || "b2c5b477f503ea54bffa1455a210ff49";
 
 const AiPlanner = () => {
     // State
@@ -128,16 +128,72 @@ const AiPlanner = () => {
 
     const sendToGemini = async (prompt, weatherInfo = "") => {
         try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-            });
-            const data = await res.json();
-            if (!res.ok) throw new Error(data.error?.message || res.statusText);
+            // First try serverless /api/gemini route (supports key rotation and model fallback)
+            let aiText = "";
+            try {
+                const res = await fetch("/api/gemini", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ prompt })
+                });
+                const data = await res.json();
+                if (res.ok && data.text) {
+                    aiText = data.text;
+                } else if (data.error) {
+                    throw new Error(data.error);
+                }
+            } catch (apiErr) {
+                // Fallback to direct OpenRouter call or direct Gemini call
+                const openRouterKey = import.meta.env?.VITE_OPENROUTER_API_KEY || "";
+                let success = false;
 
-            if (data.candidates?.[0]?.content?.parts?.[0]?.text) {
-                const aiText = data.candidates[0].content.parts[0].text;
+                if (openRouterKey) {
+                    try {
+                        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+                            method: "POST",
+                            headers: {
+                                "Authorization": `Bearer ${openRouterKey}`,
+                                "Content-Type": "application/json"
+                            },
+                            body: JSON.stringify({
+                                model: "google/gemini-2.0-flash-lite-001",
+                                messages: [{ role: "user", content: prompt }]
+                            })
+                        });
+                        const data = await res.json();
+                        if (res.ok && data.choices?.[0]?.message?.content) {
+                            aiText = data.choices[0].message.content;
+                            success = true;
+                        }
+                    } catch (e) {}
+                }
+
+                if (!success) {
+                    const key = import.meta.env?.VITE_GEMINI_API_KEY || GEMINI_KEY;
+                    const models = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-002", "gemini-2.5-flash"];
+                    for (const m of models) {
+                        try {
+                            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${key}`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                            });
+                            const data = await res.json();
+                            if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+                                aiText = data.candidates[0].content.parts[0].text;
+                                success = true;
+                                break;
+                            }
+                        } catch (e) {}
+                    }
+                }
+
+                if (!success && !aiText) {
+                    throw apiErr;
+                }
+            }
+
+            if (aiText) {
                 const fullContent = (weatherInfo ? weatherInfo + "\n---\n" : "") + aiText;
                 setResult(marked.parse(fullContent));
             } else {

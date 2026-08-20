@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import React from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { usePageTitle, usePageStyle } from '../hooks';
 
 const GuideDetail = () => {
     const { id } = useParams();
+    const navigate = useNavigate();
     usePageTitle('Guide Profile | TN Verse');
     usePageStyle('/guide/style.css');
     usePageStyle('/guide/detail.css');
@@ -86,10 +87,10 @@ const GuideDetail = () => {
                                 <a href="https://wa.me/919876543210" target="_blank" rel="noreferrer" className="btn-detail-whatsapp">
                                     <i className="fa-brands fa-whatsapp"></i> WhatsApp
                                 </a>
-                                <button className="btn-detail-call">
+                                <button className="btn-detail-call" onClick={() => alert(`Connecting call to ${guide.name}...`)}>
                                     <i className="fa-solid fa-phone"></i> Call
                                 </button>
-                                <button className="btn-detail-save">
+                                <button className="btn-detail-save" onClick={() => alert(`${guide.name} saved to your favorites!`)}>
                                     <i className="fa-regular fa-heart"></i>
                                 </button>
                             </div>
@@ -158,7 +159,7 @@ const GuideDetail = () => {
                                 <div className="check-item"><i className="fa-solid fa-check"></i> 24/7 Emergency Support</div>
                                 <div className="check-item"><i className="fa-solid fa-xmark no"></i> Transportation / Food</div>
                             </div>
-                            <button className="btn-book-now-premium">Book Now & Confirm</button>
+                            <button className="btn-book-now-premium" onClick={() => navigate('/guide')}>Book Now & Confirm</button>
                             <p className="secure-p"><i className="fa-solid fa-shield-halved"></i> Verified & Secure Booking</p>
                         </div>
                     </div>
@@ -168,7 +169,7 @@ const GuideDetail = () => {
             {/* Mobile Bottom Bar */}
             <div className="mobile-book-bar">
                 <div className="mobile-price">₹{guide.price}/{guide.priceType}</div>
-                <button className="btn-mobile-book">Book Now</button>
+                <button className="btn-mobile-book" onClick={() => navigate('/guide')}>Book Now</button>
             </div>
             <Footer />
         </div>

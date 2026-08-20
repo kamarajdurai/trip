@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTranslation } from 'react-i18next';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import './WhereToGo.css';
@@ -94,7 +93,6 @@ const placesData = {
 };
 
 const WhereToGo = () => {
-    const { t } = useTranslation();
     const navigate = useNavigate();
     const [selectedPlace, setSelectedPlace] = useState(null);
     const [activeCategory, setActiveCategory] = useState(null);
@@ -136,9 +134,7 @@ const WhereToGo = () => {
     };
 
     const handlePlanTrip = (placeName) => {
-        // Navigate to PlanTrip page with the destination pre-filled if possible
-        // For now, simple navigation to the tool
-        navigate('/plan-trip');
+        navigate('/plan-trip', { state: { destination: placeName } });
     };
 
     const handleNext = () => {

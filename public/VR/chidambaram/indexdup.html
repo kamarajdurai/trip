@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Chidambaram Nataraja Temple - Virtual Reality Tour</title>
+  <style>
+    body{margin:0;padding:0;overflow:hidden;font-family:'Inter',sans-serif;}
+    #street-view{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;}
+    .top-settings-wrapper{position:absolute;top:15px;right:15px;z-index:1002;}
+    .settings-capsule{background:white;padding:6px 10px;border-radius:50px;box-shadow:0 4px 15px rgba(0,0,0,0.15);display:flex;gap:8px;align-items:center;border:1px solid rgba(79,70,229,0.2);}
+    .settings-capsule select,.settings-capsule button{background:white;color:#4f46e5;border:none;padding:8px 15px;border-radius:40px;font-weight:bold;cursor:pointer;font-size:13px;transition:all 0.3s;outline:none;}
+    #audio-control-btn{background:#4f46e5!important;color:white!important;min-width:140px;}
+    #fullscreen-btn{background:#4f46e5!important;color:white!important;}
+    #fullscreen-btn:hover,#audio-control-btn:hover{opacity:0.9;transform:scale(1.05);}
+    .top-nav-wrapper{position:absolute;top:15px;left:15px;z-index:1002;display:flex;gap:10px;pointer-events:none;}
+    #location-buttons{pointer-events:auto;display:flex;flex-direction:column;gap:8px;}
+    #location-buttons button{background:rgba(255,255,255,0.95);color:#4f46e5;border:2.5px solid #4f46e5;padding:8px 16px;border-radius:12px;font-weight:bold;cursor:pointer;white-space:nowrap;height:40px;display:flex;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:all 0.2s;font-size:13px;min-width:160px;}
+    #location-buttons button:hover{background:#4f46e5;color:white;transform:scale(1.03);}
+    #vr-splash{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#0c0a1e,#1e1b4b,#312e81);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.8s ease;}
+    .splash-icon{font-size:5rem;margin-bottom:1rem;animation:float 3s ease-in-out infinite;}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+    .splash-content h1{color:#a5b4fc;font-size:2.5rem;margin-bottom:0.5rem;}
+    .splash-content p{color:#c7d2fe;font-size:1rem;max-width:420px;margin:0 auto 2rem;}
+    .splash-badge{display:inline-block;background:rgba(165,180,252,0.15);border:1px solid #a5b4fc;color:#a5b4fc;padding:0.3rem 1rem;border-radius:50px;font-size:0.8rem;font-weight:600;margin-bottom:1.5rem;letter-spacing:1px;text-transform:uppercase;}
+    #start-vr-btn{padding:15px 40px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border:none;border-radius:30px;font-size:1.2rem;font-weight:bold;cursor:pointer;box-shadow:0 10px 30px rgba(79,70,229,0.5);transition:transform 0.2s;}
+    #start-vr-btn:hover{transform:scale(1.05);}
+    .back-btn{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:10px 25px;border-radius:50px;text-decoration:none;font-size:0.9rem;transition:background 0.3s;}
+    .custom-label{position:absolute;background:white;color:#333;padding:16px 24px;font-size:18px;border-radius:16px;transform:translate(-50%,-50%);top:50%;left:50%;z-index:1001;display:none;pointer-events:none;border:3px solid #4f46e5;box-shadow:0 10px 30px rgba(79,70,229,0.3);text-align:center;min-width:260px;max-width:420px;}
+    .custom-label .label-title{color:#4f46e5;font-weight:800;font-size:20px;display:block;margin-bottom:8px;}
+    .custom-label .label-desc{font-size:14px;color:#555;line-height:1.6;}
+    #back-home{position:absolute;bottom:20px;right:20px;z-index:1002;background:rgba(255,255,255,0.9);border:2px solid #4f46e5;color:#4f46e5;padding:10px 20px;border-radius:30px;font-weight:bold;font-size:13px;cursor:pointer;text-decoration:none;transition:all 0.3s;}
+    #back-home:hover{background:#4f46e5;color:white;}
+  </style>
+</head>
+<body>
+
+  <div id="vr-splash">
+    <div class="splash-content">
+      <div class="splash-icon">💃</div>
+      <div class="splash-badge">Temple of the Cosmic Dance</div>
+      <h1>Chidambaram Nataraja Temple</h1>
+      <p>Where Lord Shiva performs the eternal Cosmic Dance (Ananda Tandava) — one of the holiest pilgrimage sites in South India, over 2000 years old!</p>
+      <button id="start-vr-btn">▶ Begin Virtual Tour</button>
+    </div>
+    <a href="../index.html" class="back-btn">← Back to All Places</a>
+  </div>
+
+  <div class="top-nav-wrapper">
+    <div id="location-buttons">
+      <button onclick="goTo('east_gopuram')" id="btn-east_gopuram">🗼 East Gopuram</button>
+      <button onclick="goTo('kanaka_sabha')" id="btn-kanaka_sabha">✨ Kanaka Sabha</button>
+      <button onclick="goTo('nataraja_hall')" id="btn-nataraja_hall">💃 Nataraja Sanctum</button>
+      <button onclick="goTo('sivakami_shrine')" id="btn-sivakami_shrine">🌺 Sivakami Shrine</button>
+      <button onclick="goTo('shivaganga_tank')" id="btn-shivaganga_tank">🌊 Shivaganga Tank</button>
+    </div>
+  </div>
+
+  <div class="top-settings-wrapper">
+    <div class="settings-capsule">
+      <select id="language-switcher">
+        <option value="en">English</option>
+        <option value="ta">தமிழ்</option>
+        <option value="hi">हिन्दी</option>
+        <option value="kn">ಕನ್ನಡ</option>
+      </select>
+      <button id="audio-control-btn">🔊 Audio Enabled</button>
+      <button id="fullscreen-btn">⛶ Fullscreen</button>
+    </div>
+  </div>
+
+  <div id="street-view"></div>
+
+  <div class="custom-label" id="east_gopuram-label">
+    <span class="label-title">East Gopuram (Raja Gopuram)</span>
+    <div class="label-desc">The magnificent East Gopuram is the main tower of the temple. It rises over 49 meters and is adorned with golden kalasas (spires) at the top — a stunning sight at sunrise when they glow with golden light.</div>
+  </div>
+  <div class="custom-label" id="kanaka_sabha-label">
+    <span class="label-title">Kanaka Sabha (Golden Hall)</span>
+    <div class="label-desc">The Kanaka Sabha (Golden Hall) is the inner sanctum where Nataraja dances eternally. The roof is covered with 21,600 golden tiles representing the 21,600 breaths a human takes per day — a cosmic connection!</div>
+  </div>
+  <div class="custom-label" id="nataraja_hall-label">
+    <span class="label-title">Nataraja Sanctum — The Cosmic Dancer</span>
+    <div class="label-desc">Here Lord Nataraja (Shiva) performs the Ananda Tandava — the Dance of Bliss. The dance represents the cycle of creation, preservation, and dissolution of the universe. One of the most sacred spots in Shaivism!</div>
+  </div>
+  <div class="custom-label" id="sivakami_shrine-label">
+    <span class="label-title">Sivakami (Parvati) Shrine</span>
+    <div class="label-desc">Goddess Sivakami — Parvati as Shiva's consort — watches her husband's eternal cosmic dance. Her gentle gaze and graceful form represent divine love and the feminine energy of the universe (Shakti).</div>
+  </div>
+  <div class="custom-label" id="shivaganga_tank-label">
+    <span class="label-title">Shivaganga Sacred Tank</span>
+    <div class="label-desc">The Shivaganga tank is one of four sacred tanks inside the temple complex. Pilgrims take a holy dip here before entering the sanctum. The water is believed to have healing properties blessed by Lord Shiva.</div>
+  </div>
+
+  <a href="../index.html" id="back-home">🏠 All Places</a>
+
+  <script>
+    let panorama=null,panoramaReady=false,audioContextLoaded=false,currentActiveLocation=null,audioState='paused';
+    const audioBtn=document.getElementById('audio-control-btn');
+    function updateAudioButton(){
+      if(audioState==='playing'){audioBtn.textContent='🔊 Audio Enabled';audioBtn.style.background='#4f46e5';audioBtn.style.color='white';}
+      else{audioBtn.textContent='🔇 Audio Disabled';audioBtn.style.background='white';audioBtn.style.color='#4f46e5';}
+    }
+    function toggleAudio(){
+      if(audioState==='playing'){window.speechSynthesis.cancel();document.querySelectorAll('audio').forEach(a=>a.pause());audioState='paused';}
+      else{playLocationAudio(currentActiveLocation);}updateAudioButton();
+    }
+    audioBtn.addEventListener('click',toggleAudio);
+
+    function getTranslations(){
+      return{
+        east_gopuram:{
+          en:{title:'East Gopuram',desc:'The magnificent East Gopuram rises over 49 meters with golden kalasas at the top. At sunrise, the golden spires glow brilliantly. This is the main entrance tower of the Chidambaram Nataraja Temple.',nav:'🗼 East Gopuram'},
+          ta:{title:'கிழக்கு கோபுரம்',desc:'கிழக்கு கோபுரம் 49 மீட்டருக்கும் அதிகமாக உயர்கிறது. சூரியோதயத்தில் தங்க கலசங்கள் பொன்னொளி வீசும். இது சிதம்பரம் நடராஜர் ஆலயத்தின் முக்கிய நுழைவாயில்.',nav:'🗼 கிழக்கு கோபுரம்'},
+          hi:{title:'पूर्व गोपुरम',desc:'पूर्व गोपुरम 49 मीटर से अधिक ऊंचा है, शीर्ष पर सोने के कलशे हैं। सूर्योदय पर ये सोने के शिखर शानदार ढंग से चमकते हैं।',nav:'🗼 पूर्व गोपुरम'},
+          kn:{title:'ಪೂರ್ವ ಗೋಪುರ',desc:'ಪೂರ್ವ ಗೋಪುರ 49 ಮೀಟರ್‌ಗಿಂತ ಹೆಚ್ಚು ಎತ್ತರವಿದೆ. ಸೂರ್ಯೋದಯದಲ್ಲಿ ಚಿನ್ನದ ಕಲಶಗಳು ಸುಂದರವಾಗಿ ಹೊಳೆಯುತ್ತವೆ.',nav:'🗼 ಪೂರ್ವ ಗೋಪುರ'}
+        },
+        kanaka_sabha:{
+          en:{title:'Kanaka Sabha (Golden Hall)',desc:'The Kanaka Sabha roof has 21,600 golden tiles — equal to the number of breaths a human takes per day. This cosmic connection makes it one of the most profound temples in India.',nav:'✨ Kanaka Sabha'},
+          ta:{title:'கனக சபை',desc:'கனக சபையின் மேற்கூரையில் 21,600 தங்க ஓடுகள் உள்ளன — ஒரு மனிதன் ஒரு நாளில் எடுக்கும் மூச்சுகளின் எண்ணிக்கைக்கு சமம். இந்த அண்ட தொடர்பு இதை இந்தியாவின் ஆழமான கோவில்களில் ஒன்றாக்குகிறது.',nav:'✨ கனக சபை'},
+          hi:{title:'कनक सभा (स्वर्ण हॉल)',desc:'कनक सभा की छत पर 21,600 सोने की टाइलें हैं — जो एक मानव प्रतिदिन लेने वाली सांसों की संख्या के बराबर है। यह ब्रह्मांडीय संबंध इसे भारत के सबसे गहन मंदिरों में से एक बनाता है।',nav:'✨ कनक सभा'},
+          kn:{title:'ಕನಕ ಸಭಾ',desc:'ಕನಕ ಸಭಾ ಛಾವಣಿಯಲ್ಲಿ 21,600 ಚಿನ್ನದ ಹೆಂಚುಗಳಿವೆ — ಮನುಷ್ಯ ದಿನಕ್ಕೆ ಎಷ್ಟು ಉಸಿರಾಡುತ್ತಾನೋ ಅಷ್ಟೇ ಸಂಖ್ಯೆ.',nav:'✨ ಕನಕ ಸಭಾ'}
+        },
+        nataraja_hall:{
+          en:{title:'Nataraja Sanctum',desc:'Here Lord Nataraja performs the Ananda Tandava — the Dance of Bliss. The dance represents the cycle of creation, preservation, and dissolution of the universe. This is the holiest spot in all of Shaivism.',nav:'💃 Nataraja Sanctum'},
+          ta:{title:'நடராஜர் கருவறை',desc:'இங்கு நடராஜப் பெருமான் ஆனந்த தாண்டவம் ஆடுகிறார். இந்த நடனம் பிரபஞ்சத்தின் படைப்பு, காப்பு, அழிவின் சுழற்சியை குறிக்கிறது. இது சைவ சமயத்தின் மிகவும் புனிதமான இடம்.',nav:'💃 நடராஜர் கருவறை'},
+          hi:{title:'नटराज गर्भगृह',desc:'यहाँ भगवान नटराज आनंद तांडव करते हैं — आनंद का नृत्य। यह नृत्य सृष्टि, संरक्षण और विनाश के चक्र को दर्शाता है। यह शैववाद का सबसे पवित्र स्थान है।',nav:'💃 नटराज गर्भगृह'},
+          kn:{title:'ನಟರಾಜ ಗರ್ಭಗುಡಿ',desc:'ಇಲ್ಲಿ ಶಿವ ಆನಂದ ತಾಂಡವ ನೃತ್ಯ ಮಾಡುತ್ತಾನೆ. ಈ ನೃತ್ಯ ಸೃಷ್ಟಿ, ಪಾಲನೆ, ಸಂಹಾರದ ಚಕ್ರವನ್ನು ಪ್ರತಿನಿಧಿಸುತ್ತದೆ.',nav:'💃 ನಟರಾಜ ಗರ್ಭಗುಡಿ'}
+        },
+        sivakami_shrine:{
+          en:{title:'Sivakami Shrine',desc:'Goddess Sivakami watches her husband\'s eternal cosmic dance. Her graceful form represents divine love (Shakti) — the feminine energy of the universe. A deeply peaceful and spiritual experience.',nav:'🌺 Sivakami Shrine'},
+          ta:{title:'சிவகாமி சன்னிதி',desc:'சிவகாமி தேவி தன் கணவரின் நித்திய நடனத்தை கண்டு அருள் புரிகிறாள். அவளது அருள் உருவம் தெய்வீக அன்பை (சக்தி) குறிக்கிறது.',nav:'🌺 சிவகாமி சன்னிதி'},
+          hi:{title:'शिवकामी मंदिर',desc:'देवी शिवकामी अपने पति के शाश्वत ब्रह्मांडीय नृत्य को देखती हैं। उनकी सुंदर मूर्ति दिव्य प्रेम (शक्ति) का प्रतीक है।',nav:'🌺 शिवकामी मंदिर'},
+          kn:{title:'ಶಿವಕಾಮಿ ದೇವಾಲಯ',desc:'ದೇವಿ ಶಿವಕಾಮಿ ತನ್ನ ಪತಿಯ ಶಾಶ್ವತ ಬ್ರಹ್ಮಾಂಡ ನೃತ್ಯವನ್ನು ನೋಡುತ್ತಾಳೆ.',nav:'🌺 ಶಿವಕಾಮಿ ದೇವಾಲಯ'}
+        },
+        shivaganga_tank:{
+          en:{title:'Shivaganga Sacred Tank',desc:'The Shivaganga tank is one of four sacred tanks inside the complex. Pilgrims take a holy dip before entering the sanctum. The water is believed to have healing properties blessed by Lord Shiva himself.',nav:'🌊 Shivaganga Tank'},
+          ta:{title:'சிவகங்கை குளம்',desc:'சிவகங்கை குளம் கோவில் வளாகத்தில் உள்ள நான்கு புனித குளங்களில் ஒன்று. பக்தர்கள் கருவறைக்கு செல்வதற்கு முன் இங்கே புனித நீராடுகிறார்கள்.',nav:'🌊 சிவகங்கை குளம்'},
+          hi:{title:'शिवगंगा पवित्र तालाब',desc:'शिवगंगा तालाब परिसर के चार पवित्र तालाबों में से एक है। तीर्थयात्री गर्भगृह में प्रवेश से पहले यहाँ पवित्र स्नान करते हैं।',nav:'🌊 शिवगंगा तालाब'},
+          kn:{title:'ಶಿವಗಂಗಾ ತೊಟ್ಟಿ',desc:'ಶಿವಗಂಗಾ ತೊಟ್ಟಿ ನಾಲ್ಕು ಪವಿತ್ರ ತೊಟ್ಟಿಗಳಲ್ಲಿ ಒಂದು. ಯಾತ್ರಿಕರು ಗರ್ಭಗುಡಿ ಪ್ರವೇಶಿಸುವ ಮೊದಲು ಇಲ್ಲಿ ಪವಿತ್ರ ಸ್ನಾನ ಮಾಡುತ್ತಾರೆ.',nav:'🌊 ಶಿವಗಂಗಾ ತೊಟ್ಟಿ'}
+        }
+      };
+    }
+
+    function speakDescription(locationId,lang){
+      const translations=getTranslations();
+      if(!translations[locationId]||!translations[locationId][lang])return;
+      window.speechSynthesis.cancel();
+      const text=translations[locationId][lang].desc;
+      const utterance=new SpeechSynthesisUtterance(text);
+      const langMap={en:['en-IN','en-US'],ta:['ta-IN'],hi:['hi-IN'],kn:['kn-IN']};
+      const voices=window.speechSynthesis.getVoices();
+      const targetLangs=langMap[lang]||['en-US'];
+      const selectedVoice=voices.find(v=>targetLangs.some(l=>v.lang.startsWith(l)));
+      if(selectedVoice)utterance.voice=selectedVoice;
+      utterance.lang=targetLangs[0];utterance.rate=0.9;
+      utterance.onstart=()=>{audioState='playing';updateAudioButton();};
+      utterance.onend=()=>{audioState='paused';updateAudioButton();};
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function playLocationAudio(locationId){
+      if(!locationId)return;
+      window.speechSynthesis.cancel();
+      document.querySelectorAll('audio').forEach(a=>{a.pause();a.currentTime=0;});
+      const lang=document.getElementById('language-switcher').value;
+      speakDescription(locationId,lang);
+    }
+
+    document.getElementById('start-vr-btn').addEventListener('click',()=>{
+      const splash=document.getElementById('vr-splash');
+      splash.style.opacity='0';setTimeout(()=>{splash.style.display='none';},800);
+      currentActiveLocation='east_gopuram';audioContextLoaded=true;
+      setTimeout(()=>{playLocationAudio('east_gopuram');},300);
+    });
+
+    document.getElementById('language-switcher').addEventListener('change',function(){
+      const lang=this.value;const trans=getTranslations();
+      Object.keys(trans).forEach(id=>{
+        const label=document.getElementById(`${id}-label`);
+        if(label){label.querySelector('.label-title').textContent=trans[id][lang].title;label.querySelector('.label-desc').textContent=trans[id][lang].desc;}
+        const navBtn=document.getElementById(`btn-${id}`);
+        if(navBtn)navBtn.textContent=trans[id][lang].nav;
+      });
+      if(audioState==='playing')playLocationAudio(currentActiveLocation);
+    });
+
+    function initPanorama(){
+      const locations=[
+        {id:'east_gopuram',  location:{lat:11.3997,lng:79.6930},heading:270},
+        {id:'kanaka_sabha',  location:{lat:11.3999,lng:79.6925},heading:180},
+        {id:'nataraja_hall', location:{lat:11.3998,lng:79.6923},heading:200},
+        {id:'sivakami_shrine',location:{lat:11.3997,lng:79.6921},heading:220},
+        {id:'shivaganga_tank',location:{lat:11.4000,lng:79.6928},heading:90}
+      ];
+      const svService=new google.maps.StreetViewService();
+      svService.getPanorama({location:locations[0].location,radius:200},(data,status)=>{
+        if(status==='OK'){
+          panorama=new google.maps.StreetViewPanorama(document.getElementById('street-view'),{
+            pano:data.location.pano,pov:{heading:locations[0].heading,pitch:5},
+            visible:true,addressControl:false,linksControl:true,showRoadLabels:false,fullscreenControl:false
+          });
+          panorama.addListener('pov_changed',()=>{
+            const pov=panorama.getPov();const pos=panorama.getPosition();
+            let bestLoc=null,minDistance=Infinity;
+            locations.forEach(loc=>{
+              if(google.maps.geometry){
+                const distance=google.maps.geometry.spherical.computeDistanceBetween(pos,new google.maps.LatLng(loc.location.lat,loc.location.lng));
+                const headingDiff=Math.abs((pov.heading%360)-loc.heading);
+                const isLookingAt=headingDiff<=40||(360-headingDiff)<=40;
+                const isClose=distance<=30;
+                const label=document.getElementById(loc.id+'-label');
+                if(label)label.style.display=(isClose&&isLookingAt)?'block':'none';
+                if(distance<minDistance){minDistance=distance;bestLoc=loc.id;}
+              }
+            });
+            if(minDistance<=30&&bestLoc&&bestLoc!==currentActiveLocation){
+              currentActiveLocation=bestLoc;
+              if(audioContextLoaded&&audioState==='playing')playLocationAudio(bestLoc);
+            }
+          });
+          panoramaReady=true;
+        }else{
+          svService.getPanorama({location:{lat:11.3997,lng:79.6930},radius:500},(d2,s2)=>{
+            if(s2==='OK'){panorama=new google.maps.StreetViewPanorama(document.getElementById('street-view'),{pano:d2.location.pano,pov:{heading:270,pitch:5},visible:true,addressControl:false,fullscreenControl:false});panoramaReady=true;}
+          });
+        }
+      });
+    }
+
+    function goTo(place){
+      const locations={
+        east_gopuram:   {lat:11.3997,lng:79.6930,heading:270},
+        kanaka_sabha:   {lat:11.3999,lng:79.6925,heading:180},
+        nataraja_hall:  {lat:11.3998,lng:79.6923,heading:200},
+        sivakami_shrine:{lat:11.3997,lng:79.6921,heading:220},
+        shivaganga_tank:{lat:11.4000,lng:79.6928,heading:90}
+      };
+      const target=locations[place];
+      if(!panoramaReady||!target)return;
+      currentActiveLocation=place;
+      const svService=new google.maps.StreetViewService();
+      svService.getPanorama({location:target,radius:300},(data,status)=>{
+        if(status==='OK'){panorama.setPano(data.location.pano);panorama.setPov({heading:target.heading,pitch:5,zoom:1});}
+      });
+      if(audioContextLoaded)playLocationAudio(place);
+    }
+
+    document.getElementById('fullscreen-btn').addEventListener('click',()=>{
+      if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(err=>console.log(err));}else{document.exitFullscreen();}
+    });
+    document.addEventListener('fullscreenchange',()=>{
+      document.getElementById('fullscreen-btn').innerHTML=document.fullscreenElement?'⛶ Exit Fullscreen':'⛶ Fullscreen';
+    });
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATew-TdTHzI9IZjizM8dOJxMBXPB6LRfE&libraries=geometry&callback=initPanorama" async defer></script>
+</body>
+</html>

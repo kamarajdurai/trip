@@ -11,20 +11,30 @@ const GuideRegistration = () => {
 
     const [currentStep, setCurrentStep] = useState(1);
     const [isSubmitted, setIsSubmitted] = useState(false);
-    const [status, setStatus] = useState('Pending'); // Simulation: Pending, Approved, Rejected
+    const [status, setStatus] = useState('Approved'); // Approved for demo access
     const [otpSent, setOtpSent] = useState(false);
     const [phone, setPhone] = useState('');
+    const [fullName, setFullName] = useState('');
+    const [city, setCity] = useState('');
 
     const nextStep = () => setCurrentStep(prev => Math.min(prev + 1, 3));
     const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        // Simulation of submission
+        const newGuide = {
+            id: Date.now(),
+            name: fullName.trim() || "Registered Guide",
+            phone: phone.trim(),
+            location: city.trim() || "Tamil Nadu",
+            status: "Approved"
+        };
+        const existingGuides = JSON.parse(localStorage.getItem('registeredGuides') || '[]');
+        existingGuides.push(newGuide);
+        localStorage.setItem('registeredGuides', JSON.stringify(existingGuides));
+
         setIsSubmitted(true);
-        // Randomly set status for demo
-        const outcomes = ['Pending'];
-        setStatus(outcomes[0]);
+        setStatus('Approved');
     };
 
     const handleSendOTP = () => {
@@ -82,7 +92,7 @@ const GuideRegistration = () => {
                                         </div>
                                         <div className="form-group-modern">
                                             <label>Full Name</label>
-                                            <input type="text" placeholder="As per Aadhaar" required />
+                                            <input type="text" placeholder="As per Aadhaar" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
                                         </div>
                                         <div className="form-group-modern">
                                             <label>Mobile Number</label>
@@ -115,7 +125,7 @@ const GuideRegistration = () => {
                                         </div>
                                         <div className="form-group-modern">
                                             <label>City / District</label>
-                                            <input type="text" placeholder="e.g. Madurai" required />
+                                            <input type="text" placeholder="e.g. Madurai" required value={city} onChange={(e) => setCity(e.target.value)} />
                                         </div>
                                         <div className="form-group-modern full">
                                             <label>Languages Known</label>

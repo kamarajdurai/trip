@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import './Footer.css';
 
 const Footer = () => {
@@ -13,24 +14,26 @@ const Footer = () => {
                 <div className="footer-links">
                     <div className="link-group">
                         <h4>Platform</h4>
-                        <a href="/home">Home</a>
-                        <a href="/trip-history">Adventures</a>
-                        <a href="/wallet">Wallet</a>
+                        <Link to="/home">Home</Link>
+                        <Link to="/plan-trip">Plan Trip</Link>
+                        <Link to="/trip-history">Adventures</Link>
+                        <Link to="/wallet">Wallet</Link>
                     </div>
                     <div className="link-group">
-                        <h4>Support</h4>
-                        <a href="#">Contact Us</a>
-                        <a href="#">FAQ</a>
-                        <a href="#">Safety</a>
+                        <h4>Experiences</h4>
+                        <Link to="/where-to-go">Where to Go</Link>
+                        <Link to="/ar">AR Experience</Link>
+                        <Link to="/vr">Virtual Reality</Link>
+                        <Link to="/booking">Hotel Booking</Link>
                     </div>
                 </div>
 
                 <div className="footer-social">
                     <div className="social-icons">
-                        <a href="#" aria-label="Instagram"><i className="fa-brands fa-instagram"></i></a>
-                        <a href="#" aria-label="Twitter"><i className="fa-brands fa-twitter"></i></a>
-                        <a href="#" aria-label="Facebook"><i className="fa-brands fa-facebook"></i></a>
-                        <a href="#" aria-label="YouTube"><i className="fa-brands fa-youtube"></i></a>
+                        <a href="https://instagram.com" target="_blank" rel="noreferrer" aria-label="Instagram"><i className="fa-brands fa-instagram"></i></a>
+                        <a href="https://twitter.com" target="_blank" rel="noreferrer" aria-label="Twitter"><i className="fa-brands fa-twitter"></i></a>
+                        <a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><i className="fa-brands fa-facebook"></i></a>
+                        <a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><i className="fa-brands fa-youtube"></i></a>
                     </div>
                     <p className="copyright">&copy; 2026 TNVerse. All rights reserved.</p>
                 </div>

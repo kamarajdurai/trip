@@ -8,7 +8,9 @@ import './Auth.css';
 const Login = () => {
     const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
+    const [infoMsg, setInfoMsg] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
@@ -24,6 +26,7 @@ const Login = () => {
     const handleLogin = async (e) => {
         e.preventDefault();
         setError('');
+        setInfoMsg('');
         setLoading(true);
 
         try {
@@ -43,7 +46,7 @@ const Login = () => {
 
             await signInWithEmailAndPassword(auth, email, password);
             navigate('/home');
-        } catch (err) {
+        } catch {
             setError('Invalid credentials');
         } finally {
             setLoading(false);
@@ -52,6 +55,7 @@ const Login = () => {
 
     const handleGoogleLogin = async () => {
         setError('');
+        setInfoMsg('');
         setLoading(true);
         try {
             const result = await signInWithPopup(auth, googleProvider);
@@ -102,6 +106,10 @@ const Login = () => {
         }
     };
 
+    const handleFacebookLogin = () => {
+        setInfoMsg('Facebook login integration is coming soon! Please sign in with Google or Email.');
+    };
+
 // Icon definitions
 const MailIcon = () => (
     <svg className="auth-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -137,27 +145,28 @@ const FacebookIcon = () => (
                 <svg className="auth-brand-logo-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M12 2L2 22h20L12 2z"></path><path d="M12 22V8"></path><path d="M6 14h12"></path>
                 </svg>
-                <h1 className="auth-brand-title">Tamil Nadu<br />Corporate Travel</h1>
-                <div className="auth-brand-subtitle">Explore | Manage | Connect</div>
+                <h1 className="auth-brand-title">Tamil Nadu<br />TNVerse</h1>
+                <div className="auth-brand-subtitle">Explore | Discover | Connect</div>
             </div>
 
             <div className="auth-card">
                 <div className="auth-header">
                     <h2 className="auth-title">Welcome Back.</h2>
-                    <p className="auth-subtitle">Sign in to your corporate travel account</p>
+                    <p className="auth-subtitle">Sign in to your TNVerse travel account</p>
                 </div>
                 {error && <div className="error-message">{error}</div>}
+                {infoMsg && <div style={{ background: '#e0f2fe', color: '#0369a1', padding: '10px 14px', borderRadius: '8px', fontSize: '0.85rem', marginBottom: '12px' }}>{infoMsg}</div>}
                 
                 <form className="auth-form" onSubmit={handleLogin}>
                     <div className="auth-input-group">
-                        <label className="auth-label" htmlFor="identifier">Email Address</label>
+                        <label className="auth-label" htmlFor="identifier">Email Address or Username</label>
                         <div className="auth-input-wrapper">
                             <MailIcon />
                             <input 
                                 id="identifier" 
                                 className="auth-input"
                                 type="text"
-                                placeholder="yourname@company.com"
+                                placeholder="yourname@gmail.com"
                                 value={identifier}
                                 onChange={(e) => setIdentifier(e.target.value)}
                                 required
@@ -168,14 +177,16 @@ const FacebookIcon = () => (
                     <div className="auth-input-group">
                         <div className="auth-label-row">
                             <label className="auth-label" htmlFor="password">Password</label>
-                            <a href="#" className="auth-forgot">Forgot Password?</a>
+                            <span style={{ fontSize: '0.8rem', color: '#810000', cursor: 'pointer', fontWeight: '600' }} onClick={() => setShowPassword(!showPassword)}>
+                                {showPassword ? 'Hide' : 'Show'}
+                            </span>
                         </div>
                         <div className="auth-input-wrapper">
                             <LockIcon />
                             <input 
                                 id="password" 
                                 className="auth-input"
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="••••••••••••"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
@@ -194,14 +205,14 @@ const FacebookIcon = () => (
                         <button type="button" className="auth-sso-btn" onClick={handleGoogleLogin} disabled={loading}>
                             <GoogleIcon /> Google
                         </button>
-                        <button type="button" className="auth-sso-btn">
+                        <button type="button" className="auth-sso-btn" onClick={handleFacebookLogin} disabled={loading}>
                             <FacebookIcon /> Facebook
                         </button>
                     </div>
                 </form>
                 
                 <div className="auth-footer">
-                    Don't have an account? <span onClick={() => navigate('/signup')} className="auth-link">Request access</span>
+                    Don't have an account? <span onClick={() => navigate('/signup')} className="auth-link">Create Account</span>
                 </div>
             </div>
         </div>

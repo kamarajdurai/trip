@@ -46,31 +46,33 @@ const GuideDashboard = () => {
     const [loginError, setLoginError] = useState(false);
     const [bookings, setBookings] = useState([]);
 
-    useEffect(() => {
-        const storedGuide = JSON.parse(localStorage.getItem('loggedInGuide'));
-        if (storedGuide) {
-            setLoggedInGuide(storedGuide);
-            loadBookings(storedGuide.id);
-        }
-    }, []);
-
     const loadBookings = (guideId) => {
         const allBookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-        const guideBookings = allBookings.filter(b => b.guideId === guideId);
+        const guideBookings = allBookings.filter(b => b.guideId === guideId || b.guideName === guideId);
         // Sort by id (assuming id is timestamp or incremental)
         guideBookings.sort((a, b) => b.id - a.id);
         setBookings(guideBookings);
     };
 
+    useEffect(() => {
+        const storedGuide = JSON.parse(localStorage.getItem('loggedInGuide'));
+        if (storedGuide) {
+            setLoggedInGuide(storedGuide);
+            loadBookings(storedGuide.id || storedGuide.name);
+        }
+    }, []);
+
     const handleLogin = (e) => {
         e.preventDefault();
         const phone = loginPhone.trim();
-        const guide = guides.find(g => g.phone === phone);
+        const registeredGuides = JSON.parse(localStorage.getItem('registeredGuides') || '[]');
+        const allGuides = [...guides, ...registeredGuides];
+        const guide = allGuides.find(g => g.phone === phone);
 
         if (guide) {
             localStorage.setItem('loggedInGuide', JSON.stringify(guide));
             setLoggedInGuide(guide);
-            loadBookings(guide.id);
+            loadBookings(guide.id || guide.name);
             setLoginError(false);
             setLoginPhone('');
         } else {

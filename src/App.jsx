@@ -39,25 +39,25 @@ function App() {
                     </div>
                 }>
                     <Routes>
-                        <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                        <Route path="/" element={<VR />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<Signup />} />
 
                         <Route path="/preview/plan-trip" element={<ProtectedRoute><PlanTrip /></ProtectedRoute>} />
                         <Route path="/preview/ar" element={<ProtectedRoute><AR /></ProtectedRoute>} />
-                        <Route path="/preview/vr" element={<ProtectedRoute><VR /></ProtectedRoute>} />
+                        <Route path="/preview/vr" element={<VR />} />
 
                         {/* Public TnVerse Routes */}
                         <Route path="/culinary" element={<Culinary />} />
                         <Route path="/agri" element={<Agri />} />
                         <Route path="/medical" element={<Medical />} />
 
-                        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+                        <Route path="/home" element={<Home />} />
                         <Route path="/trip-history" element={<ProtectedRoute><TripHistory /></ProtectedRoute>} />
                         <Route path="/wallet" element={<ProtectedRoute><WalletDashboard /></ProtectedRoute>} />
                         <Route path="/plan-trip" element={<ProtectedRoute><PlanTrip /></ProtectedRoute>} />
-                        <Route path="/vr" element={<ProtectedRoute><VR /></ProtectedRoute>} />
-                        <Route path="/ar" element={<ProtectedRoute><AR /></ProtectedRoute>} />
+                        <Route path="/vr" element={<VR />} />
+                        <Route path="/ar" element={<AR />} />
 
                         <Route path="/booking" element={<ProtectedRoute><Booking /></ProtectedRoute>} />
                         <Route path="/event" element={<ProtectedRoute><Event /></ProtectedRoute>} />

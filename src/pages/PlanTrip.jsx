@@ -1,18 +1,26 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { usePageTitle, usePageStyle, useScript } from '../hooks';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp, doc, setDoc, increment } from 'firebase/firestore';
 
+const parseMarkdown = (text) => {
+    if (typeof window !== 'undefined' && window.marked && typeof window.marked.parse === 'function') {
+        return window.marked.parse(text);
+    }
+    return text;
+};
+
 const PlanTrip = () => {
     usePageTitle('Tamil Nadu Travel Planner AI');
     usePageStyle('/ai api/style.css'); // Assuming style.css is in public/ai api/
+    const location = useLocation();
 
     // Load libraries
     useScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js");
     useScript("https://cdn.jsdelivr.net/npm/marked/marked.min.js");
 
     const WEATHER_KEY = import.meta.env.WEATHER_API_KEY;
-
 
     const [loading, setLoading] = useState(false);
     const [loadingMsg, setLoadingMsg] = useState('');
@@ -24,15 +32,21 @@ const PlanTrip = () => {
     const [selectedDayToReplan, setSelectedDayToReplan] = useState('1');
     const [replanFeedback, setReplanFeedback] = useState('');
     const [isExporting, setIsExporting] = useState(false);
-    const [calendarEvents, setCalendarEvents] = useState([]);
-    const [showSyncModal, setShowSyncModal] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+    const [calendarEvents, setCalendarEvents] = useState([]);
+    const [showSyncModal, setShowSyncModal] = useState(false);
     const [savedTripId, setSavedTripId] = useState(null);
 
     // Form State
     const [city, setCity] = useState('');
     const [startDate, setStartDate] = useState('');
+
+    useEffect(() => {
+        if (location.state?.destination) {
+            setCity(location.state.destination);
+        }
+    }, [location.state]);
     const [endDate, setEndDate] = useState('');
     const [travelType, setTravelType] = useState('family');
     const [budget, setBudget] = useState('moderate');
@@ -58,26 +72,6 @@ const PlanTrip = () => {
         return 'fa-cloud-sun';
     };
 
-    const renderWeatherSection = (summaries, cityName) => {
-        if (!summaries || summaries.length === 0) return "";
-
-        const cards = summaries.map(s => `
-<div class="weather-card">
-    <span class="date">Day ${s.day}</span>
-    <i class="fa-solid ${getWeatherIcon(s.desc)} weather-icon"></i>
-    <span class="temp">${Math.round(s.temp)}°C</span>
-    <span class="desc">${s.desc}</span>
-</div>`).join('');
-
-        return `
-<div class="weather-section">
-    <h3><i class="fa-solid fa-cloud-sun"></i> Weather Forecast for ${cityName}</h3>
-    <div class="weather-grid">
-        ${cards}
-    </div>
-</div>`;
-    };
-
     const sendToGemini = async (prompt) => {
         try {
             const res = await fetch("/api/gemini", {
@@ -90,7 +84,7 @@ const PlanTrip = () => {
             if (!res.ok) throw new Error(data.error || "Gemini error");
 
             setRawMarkdown(data.text);
-            const htmlContent = marked.parse(data.text);
+            const htmlContent = parseMarkdown(data.text);
             setOutputHtml(htmlContent);
             setShowDownload(true);
             await saveOrUpdateTrip(data.text, htmlContent);
@@ -148,7 +142,7 @@ const PlanTrip = () => {
                     if (!forecastMap.has(date)) forecastMap.set(date, e);
                 });
 
-                weatherInfo = `### Weather Forecast for ${city}\n`;
+                let weatherInfo = `### Weather Forecast for ${city}\n`;
                 days.forEach((d, i) => {
                     const ds = d.toISOString().split("T")[0];
                     const f = forecastMap.get(ds);
@@ -280,7 +274,7 @@ const PlanTrip = () => {
             const updatedMarkdown = currentContent.replace(dayRegex, newDayContent + "\n\n");
 
             setRawMarkdown(updatedMarkdown);
-            const newHtml = marked.parse(updatedMarkdown);
+            const newHtml = parseMarkdown(updatedMarkdown);
             setOutputHtml(newHtml);
             setReplanFeedback('');
             await saveOrUpdateTrip(updatedMarkdown, newHtml);
@@ -408,7 +402,7 @@ ${rawMarkdown}
                     console.error("No events in parsed JSON:", parsed);
                     throw new Error("No events found in the itinerary.");
                 }
-            } catch (parseErr) {
+            } catch {
                 console.error("JSON Parse Error. Cleaned text:", jsonText);
                 throw new Error("Could not understand the calendar data format from AI.");
             }
@@ -434,12 +428,6 @@ ${rawMarkdown}
 
             const getDestinationImage = (dest) => {
                 const search = dest?.toLowerCase() || '';
-                if (search.includes('ooty')) return 'https://images.unsplash.com/photo-1548013146-72479768b921?auto=format&fit=crop&w=1000&q=80';
-                if (search.includes('kodai')) return 'https://images.unsplash.com/photo-1626014303757-64174d6f0285?auto=format&fit=crop&w=1000&q=80';
-                if (search.includes('madurai')) return 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?auto=format&fit=crop&w=1000&q=80';
-                if (search.includes('chennai')) return 'https://images.unsplash.com/photo-1580619305218-8423a7f19bca?auto=format&fit=crop&w=1000&q=80';
-                if (search.includes('kanni')) return 'https://images.unsplash.com/photo-1601000780131-7e8e19c063cf?auto=format&fit=crop&w=1000&q=80';
-                if (search.includes('ramesh')) return 'https://images.unsplash.com/photo-1589136142558-1830f277053b?auto=format&fit=crop&w=1000&q=80';
                 return 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1000&q=80';
             };
 

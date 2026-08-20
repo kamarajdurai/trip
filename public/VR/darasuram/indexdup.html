@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Darasuram Airavatesvara Temple - Virtual Reality Tour</title>
+  <style>
+    body{margin:0;padding:0;overflow:hidden;font-family:'Inter',sans-serif;}
+    #street-view{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;}
+    .top-settings-wrapper{position:absolute;top:15px;right:15px;z-index:1002;}
+    .settings-capsule{background:white;padding:6px 10px;border-radius:50px;box-shadow:0 4px 15px rgba(0,0,0,0.15);display:flex;gap:8px;align-items:center;border:1px solid rgba(5,150,105,0.2);}
+    .settings-capsule select,.settings-capsule button{background:white;color:#059669;border:none;padding:8px 15px;border-radius:40px;font-weight:bold;cursor:pointer;font-size:13px;transition:all 0.3s;outline:none;}
+    #audio-control-btn{background:#059669!important;color:white!important;min-width:140px;}
+    #fullscreen-btn{background:#059669!important;color:white!important;}
+    #fullscreen-btn:hover,#audio-control-btn:hover{opacity:0.9;transform:scale(1.05);}
+    .top-nav-wrapper{position:absolute;top:15px;left:15px;z-index:1002;display:flex;gap:10px;pointer-events:none;}
+    #location-buttons{pointer-events:auto;display:flex;flex-direction:column;gap:8px;}
+    #location-buttons button{background:rgba(255,255,255,0.95);color:#059669;border:2.5px solid #059669;padding:8px 16px;border-radius:12px;font-weight:bold;cursor:pointer;white-space:nowrap;height:40px;display:flex;align-items:center;box-shadow:0 4px 12px rgba(0,0,0,0.15);transition:all 0.2s;font-size:13px;min-width:160px;}
+    #location-buttons button:hover{background:#059669;color:white;transform:scale(1.03);}
+    #vr-splash{position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#021a0e,#064e3b,#065f46);z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;transition:opacity 0.8s ease;}
+    .splash-icon{font-size:5rem;margin-bottom:1rem;animation:float 3s ease-in-out infinite;}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-15px)}}
+    .splash-content h1{color:#6ee7b7;font-size:2.5rem;margin-bottom:0.5rem;}
+    .splash-content p{color:#a7f3d0;font-size:1rem;max-width:420px;margin:0 auto 2rem;}
+    .splash-badge{display:inline-block;background:rgba(110,231,183,0.15);border:1px solid #6ee7b7;color:#6ee7b7;padding:0.3rem 1rem;border-radius:50px;font-size:0.8rem;font-weight:600;margin-bottom:1.5rem;letter-spacing:1px;text-transform:uppercase;}
+    #start-vr-btn{padding:15px 40px;background:linear-gradient(135deg,#059669,#10b981);color:white;border:none;border-radius:30px;font-size:1.2rem;font-weight:bold;cursor:pointer;box-shadow:0 10px 30px rgba(5,150,105,0.5);transition:transform 0.2s;}
+    #start-vr-btn:hover{transform:scale(1.05);}
+    .back-btn{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);color:white;padding:10px 25px;border-radius:50px;text-decoration:none;font-size:0.9rem;}
+    .custom-label{position:absolute;background:white;color:#333;padding:16px 24px;font-size:18px;border-radius:16px;transform:translate(-50%,-50%);top:50%;left:50%;z-index:1001;display:none;pointer-events:none;border:3px solid #059669;box-shadow:0 10px 30px rgba(5,150,105,0.3);text-align:center;min-width:260px;max-width:420px;}
+    .custom-label .label-title{color:#059669;font-weight:800;font-size:20px;display:block;margin-bottom:8px;}
+    .custom-label .label-desc{font-size:14px;color:#555;line-height:1.6;}
+    #back-home{position:absolute;bottom:20px;right:20px;z-index:1002;background:rgba(255,255,255,0.9);border:2px solid #059669;color:#059669;padding:10px 20px;border-radius:30px;font-weight:bold;font-size:13px;cursor:pointer;text-decoration:none;transition:all 0.3s;}
+    #back-home:hover{background:#059669;color:white;}
+  </style>
+</head>
+<body>
+  <div id="vr-splash">
+    <div class="splash-content">
+      <div class="splash-icon">🐘</div>
+      <div class="splash-badge">UNESCO World Heritage — Chola Temples</div>
+      <h1>Airavatesvara Temple, Darasuram</h1>
+      <p>A Chola masterpiece where the chariot is stone, the horses are carved, and the stairs produce musical notes — Kumbakonam's greatest architectural wonder!</p>
+      <button id="start-vr-btn">▶ Begin Virtual Tour</button>
+    </div>
+    <a href="../index.html" class="back-btn">← Back to All Places</a>
+  </div>
+
+  <div class="top-nav-wrapper">
+    <div id="location-buttons">
+      <button onclick="goTo('main_gopuram')" id="btn-main_gopuram">🗼 Main Gopuram</button>
+      <button onclick="goTo('stone_chariot')" id="btn-stone_chariot">🪨 Stone Chariot</button>
+      <button onclick="goTo('musical_steps')" id="btn-musical_steps">🎵 Musical Steps</button>
+      <button onclick="goTo('mandapam')" id="btn-mandapam">🏛️ Main Mandapam</button>
+      <button onclick="goTo('sanctum')" id="btn-sanctum">⛩️ Main Sanctum</button>
+    </div>
+  </div>
+
+  <div class="top-settings-wrapper">
+    <div class="settings-capsule">
+      <select id="language-switcher">
+        <option value="en">English</option>
+        <option value="ta">தமிழ்</option>
+        <option value="hi">हिन्दी</option>
+        <option value="kn">ಕನ್ನಡ</option>
+      </select>
+      <button id="audio-control-btn">🔊 Audio Enabled</button>
+      <button id="fullscreen-btn">⛶ Fullscreen</button>
+    </div>
+  </div>
+
+  <div id="street-view"></div>
+
+  <div class="custom-label" id="main_gopuram-label">
+    <span class="label-title">Main Gopuram</span>
+    <div class="label-desc">The entrance gopuram of Airavatesvara Temple is a smaller yet incredibly ornate structure. Built in the 12th century by Raja Raja Chola II, every inch is carved with exquisite detail — gods, flowers, and mythical beings.</div>
+  </div>
+  <div class="custom-label" id="stone_chariot-label">
+    <span class="label-title">The Stone Chariot (Mandapam)</span>
+    <div class="label-desc">The Mandapam is designed as a massive stone chariot pulled by horses and elephants! This is Darasuram's most iconic feature. The chariot symbolizes the Sun God's vehicle carrying Lord Shiva across the universe.</div>
+  </div>
+  <div class="custom-label" id="musical_steps-label">
+    <span class="label-title">Musical Steps (Saptasvara Steps)</span>
+    <div class="label-desc">The famous musical steps at Darasuram are carved from a single stone. When tapped, the steps produce the seven musical notes — Sa, Re, Ga, Ma, Pa, Da, Ni! A stunning example of ancient acoustic engineering.</div>
+  </div>
+  <div class="custom-label" id="mandapam-label">
+    <span class="label-title">Main Mandapam Hall</span>
+    <div class="label-desc">The intricately carved mandapam showcases outstanding Chola craftsmanship. Notice the miniature sculptures of Yama (God of Death) riding a bull, and intricate scenes from the Ramayana and Mahabharata.</div>
+  </div>
+  <div class="custom-label" id="sanctum-label">
+    <span class="label-title">Main Sanctum — Airavatesvara</span>
+    <div class="label-desc">The main deity is Lord Shiva in the form of Airavatesvara — named because the divine white elephant Airavata (vehicle of Indra) worshipped Shiva here! The lingam inside is said to radiate cool, soothing energy.</div>
+  </div>
+
+  <a href="../index.html" id="back-home">🏠 All Places</a>
+
+  <script>
+    let panorama=null,panoramaReady=false,audioContextLoaded=false,currentActiveLocation=null,audioState='paused';
+    const audioBtn=document.getElementById('audio-control-btn');
+    function updateAudioButton(){
+      if(audioState==='playing'){audioBtn.textContent='🔊 Audio Enabled';audioBtn.style.background='#059669';audioBtn.style.color='white';}
+      else{audioBtn.textContent='🔇 Audio Disabled';audioBtn.style.background='white';audioBtn.style.color='#059669';}
+    }
+    function toggleAudio(){
+      if(audioState==='playing'){window.speechSynthesis.cancel();document.querySelectorAll('audio').forEach(a=>a.pause());audioState='paused';}
+      else{playLocationAudio(currentActiveLocation);}updateAudioButton();
+    }
+    audioBtn.addEventListener('click',toggleAudio);
+
+    function getTranslations(){
+      return{
+        main_gopuram:{
+          en:{title:'Main Gopuram',desc:'The entrance gopuram of Airavatesvara Temple was built in the 12th century by Raja Raja Chola II. Every inch is carved with exquisite detail — gods, celestial beings, and intricate floral patterns.',nav:'🗼 Main Gopuram'},
+          ta:{title:'முக்கிய கோபுரம்',desc:'ஐராவதீஸ்வரர் கோவிலின் நுழைவு கோபுரம் 12ஆம் நூற்றாண்டில் இரண்டாம் ராஜராஜ சோழரால் கட்டப்பட்டது. ஒவ்வொரு அங்குலமும் நேர்த்தியான சிற்பங்களால் நிறைந்துள்ளது.',nav:'🗼 முக்கிய கோபுரம்'},
+          hi:{title:'मुख्य गोपुरम',desc:'ऐरावतेश्वर मंदिर का प्रवेश गोपुरम 12वीं शताब्दी में राजा राजा चोल द्वितीय द्वारा बनाया गया था। हर इंच उत्कृष्ट विवरण के साथ उकेरा गया है।',nav:'🗼 मुख्य गोपुरम'},
+          kn:{title:'ಮುಖ್ಯ ಗೋಪುರ',desc:'ಐರಾವತೇಶ್ವರ ದೇವಾಲಯದ ಪ್ರವೇಶ ಗೋಪುರ 12ನೇ ಶತಮಾನದಲ್ಲಿ ನಿರ್ಮಿಸಲ್ಪಟ್ಟಿದೆ.',nav:'🗼 ಮುಖ್ಯ ಗೋಪುರ'}
+        },
+        stone_chariot:{
+          en:{title:'The Stone Chariot',desc:'The Mandapam is designed as a massive stone chariot pulled by horses and elephants! This iconic feature symbolizes the Sun God\'s vehicle carrying Lord Shiva across the universe. An extraordinary feat of architecture!',nav:'🪨 Stone Chariot'},
+          ta:{title:'கல் தேர்',desc:'மண்டபம் குதிரைகள் மற்றும் யானைகளால் இழுக்கப்படும் ஒரு பிரம்மாண்டமான கல் தேராக வடிவமைக்கப்பட்டுள்ளது! இது சூரிய தேவன் சிவபெருமானை பிரபஞ்சம் முழுவதும் கொண்டு செல்வதை குறிக்கிறது.',nav:'🪨 கல் தேர்'},
+          hi:{title:'पत्थर का रथ',desc:'मंडपम को घोड़ों और हाथियों द्वारा खींचे जाने वाले एक विशाल पत्थर के रथ के रूप में डिज़ाइन किया गया है! यह प्रतीकात्मक रूप से ब्रह्मांड में शिव को ले जाने वाले सूर्य देवता के वाहन का प्रतिनिधित्व करता है।',nav:'🪨 पत्थर का रथ'},
+          kn:{title:'ಕಲ್ಲಿನ ರಥ',desc:'ಮಂಡಪ ಕುದುರೆ ಮತ್ತು ಆನೆಗಳಿಂದ ಎಳೆಯಲ್ಪಡುವ ಬೃಹತ್ ಕಲ್ಲಿನ ರಥವಾಗಿ ವಿನ್ಯಾಸಗೊಂಡಿದೆ!',nav:'🪨 ಕಲ್ಲಿನ ರಥ'}
+        },
+        musical_steps:{
+          en:{title:'Musical Steps',desc:'The famous Saptasvara steps are carved from a single stone and produce the seven musical notes — Sa Re Ga Ma Pa Da Ni — when tapped! A stunning example of Chola genius in acoustic stone engineering.',nav:'🎵 Musical Steps'},
+          ta:{title:'இசை படிகள்',desc:'சப்தஸ்வர படிகள் ஒரே கல்லில் செதுக்கப்பட்டு சப்த நாதங்களை — ச ரி க ம ப த நி — தட்டும்போது ஒலிக்கின்றன! சோழ மேதாவிகளின் அசாதாரண சாதனை.',nav:'🎵 இசை படிகள்'},
+          hi:{title:'संगीत सीढ़ियां',desc:'प्रसिद्ध सप्तस्वर सीढ़ियां एक ही पत्थर से उकेरी गई हैं और थपथपाने पर सात संगीत स्वर — सा रे ग म प ध नि — उत्पन्न करती हैं! चोल प्रतिभा का एक आश्चर्यजनक उदाहरण।',nav:'🎵 संगीत सीढ़ियां'},
+          kn:{title:'ಸಂಗೀತ ಮೆಟ್ಟಿಲುಗಳು',desc:'ಸಪ್ತಸ್ವರ ಮೆಟ್ಟಿಲುಗಳು ಒಂದೇ ಕಲ್ಲಿನಿಂದ ಕೆತ್ತಲ್ಪಟ್ಟಿವೆ ಮತ್ತು ತಟ್ಟಿದಾಗ ಏಳು ಸಂಗೀತ ಸ್ವರಗಳನ್ನು ಉತ್ಪಾದಿಸುತ್ತವೆ!',nav:'🎵 ಸಂಗೀತ ಮೆಟ್ಟಿಲುಗಳು'}
+        },
+        mandapam:{
+          en:{title:'Main Mandapam Hall',desc:'The mandapam showcases outstanding Chola craftsmanship with miniature sculptures of Yama riding a bull, and vivid scenes from the Ramayana and Mahabharata carved on the walls with incredible precision.',nav:'🏛️ Main Mandapam'},
+          ta:{title:'முக்கிய மண்டபம்',desc:'மண்டபம் யமன் காளை மீது அமர்ந்திருக்கும் குட்டை சிற்பங்களும் ராமாயண, மகாபாரத காட்சிகளும் அழகாக செதுக்கப்பட்டுள்ளன.',nav:'🏛️ முக்கிய மண்டபம்'},
+          hi:{title:'मुख्य मंडपम',desc:'मंडपम में यम की मूर्तियां, रामायण और महाभारत के दृश्य अद्भुत परिशुद्धता के साथ उकेरे गए हैं।',nav:'🏛️ मुख्य मंडपम'},
+          kn:{title:'ಮುಖ್ಯ ಮಂಡಪ',desc:'ಮಂಡಪದಲ್ಲಿ ಯಮ ಮತ್ತು ರಾಮಾಯಣ, ಮಹಾಭಾರತ ದೃಶ್ಯಗಳು ಸುಂದರವಾಗಿ ಕೆತ್ತಲ್ಪಟ್ಟಿವೆ.',nav:'🏛️ ಮುಖ್ಯ ಮಂಡಪ'}
+        },
+        sanctum:{
+          en:{title:'Main Sanctum — Airavatesvara',desc:'The deity is Lord Shiva as Airavatesvara — named because Indra\'s divine white elephant Airavata worshipped Shiva here! The lingam inside radiates cool, soothing energy unlike any other Chola temple.',nav:'⛩️ Main Sanctum'},
+          ta:{title:'கருவறை — ஐராவதீஸ்வரர்',desc:'இந்திரனின் வெள்ளை யானை ஐராவதம் இங்கு சிவனை வழிபட்டதால் இவரை ஐராவதீஸ்வரர் என்கிறோம். கருவறையிலுள்ள லிங்கம் குளிர்ச்சியான ஆற்றலை வெளிப்படுத்துகிறது.',nav:'⛩️ கருவறை'},
+          hi:{title:'मुख्य गर्भगृह — ऐरावतेश्वर',desc:'इंद्र के दिव्य सफेद हाथी ऐरावत ने यहाँ शिव की पूजा की, इसीलिए इन्हें ऐरावतेश्वर कहते हैं! अंदर का लिंगम एक अनोखी शीतल ऊर्जा उत्सर्जित करता है।',nav:'⛩️ मुख्य गर्भगृह'},
+          kn:{title:'ಮುಖ್ಯ ಗರ್ಭಗುಡಿ — ಐರಾವತೇಶ್ವರ',desc:'ಇಂದ್ರನ ಬಿಳಿ ಆನೆ ಐರಾವತ ಇಲ್ಲಿ ಶಿವನನ್ನು ಪೂಜಿಸಿದ ಕಾರಣ ಈ ದೇವರಿಗೆ ಐರಾವತೇಶ್ವರ ಎಂದು ಹೆಸರು!',nav:'⛩️ ಮುಖ್ಯ ಗರ್ಭಗುಡಿ'}
+        }
+      };
+    }
+
+    function speakDescription(locationId,lang){
+      const translations=getTranslations();
+      if(!translations[locationId]||!translations[locationId][lang])return;
+      window.speechSynthesis.cancel();
+      const utterance=new SpeechSynthesisUtterance(translations[locationId][lang].desc);
+      const langMap={en:['en-IN','en-US'],ta:['ta-IN'],hi:['hi-IN'],kn:['kn-IN']};
+      const voices=window.speechSynthesis.getVoices();
+      const targetLangs=langMap[lang]||['en-US'];
+      const selectedVoice=voices.find(v=>targetLangs.some(l=>v.lang.startsWith(l)));
+      if(selectedVoice)utterance.voice=selectedVoice;
+      utterance.lang=targetLangs[0];utterance.rate=0.9;
+      utterance.onstart=()=>{audioState='playing';updateAudioButton();};
+      utterance.onend=()=>{audioState='paused';updateAudioButton();};
+      window.speechSynthesis.speak(utterance);
+    }
+
+    function playLocationAudio(locationId){
+      if(!locationId)return;
+      window.speechSynthesis.cancel();
+      document.querySelectorAll('audio').forEach(a=>{a.pause();a.currentTime=0;});
+      speakDescription(locationId,document.getElementById('language-switcher').value);
+    }
+
+    document.getElementById('start-vr-btn').addEventListener('click',()=>{
+      const splash=document.getElementById('vr-splash');
+      splash.style.opacity='0';setTimeout(()=>{splash.style.display='none';},800);
+      currentActiveLocation='main_gopuram';audioContextLoaded=true;
+      setTimeout(()=>{playLocationAudio('main_gopuram');},300);
+    });
+
+    document.getElementById('language-switcher').addEventListener('change',function(){
+      const lang=this.value;const trans=getTranslations();
+      Object.keys(trans).forEach(id=>{
+        const label=document.getElementById(`${id}-label`);
+        if(label){label.querySelector('.label-title').textContent=trans[id][lang].title;label.querySelector('.label-desc').textContent=trans[id][lang].desc;}
+        const navBtn=document.getElementById(`btn-${id}`);
+        if(navBtn)navBtn.textContent=trans[id][lang].nav;
+      });
+      if(audioState==='playing')playLocationAudio(currentActiveLocation);
+    });
+
+    function initPanorama(){
+      const locations=[
+        {id:'main_gopuram', location:{lat:10.9596,lng:79.3561},heading:180},
+        {id:'stone_chariot',location:{lat:10.9594,lng:79.3559},heading:200},
+        {id:'musical_steps',location:{lat:10.9593,lng:79.3558},heading:210},
+        {id:'mandapam',     location:{lat:10.9592,lng:79.3557},heading:190},
+        {id:'sanctum',      location:{lat:10.9591,lng:79.3556},heading:200}
+      ];
+      const svService=new google.maps.StreetViewService();
+      svService.getPanorama({location:locations[0].location,radius:300},(data,status)=>{
+        if(status==='OK'){
+          panorama=new google.maps.StreetViewPanorama(document.getElementById('street-view'),{
+            pano:data.location.pano,pov:{heading:locations[0].heading,pitch:5},
+            visible:true,addressControl:false,linksControl:true,showRoadLabels:false,fullscreenControl:false
+          });
+          panorama.addListener('pov_changed',()=>{
+            const pov=panorama.getPov();const pos=panorama.getPosition();
+            let bestLoc=null,minDistance=Infinity;
+            locations.forEach(loc=>{
+              if(google.maps.geometry){
+                const dist=google.maps.geometry.spherical.computeDistanceBetween(pos,new google.maps.LatLng(loc.location.lat,loc.location.lng));
+                const hd=Math.abs((pov.heading%360)-loc.heading);
+                const looking=hd<=40||(360-hd)<=40;
+                const close=dist<=30;
+                const label=document.getElementById(loc.id+'-label');
+                if(label)label.style.display=(close&&looking)?'block':'none';
+                if(dist<minDistance){minDistance=dist;bestLoc=loc.id;}
+              }
+            });
+            if(minDistance<=30&&bestLoc&&bestLoc!==currentActiveLocation){
+              currentActiveLocation=bestLoc;
+              if(audioContextLoaded&&audioState==='playing')playLocationAudio(bestLoc);
+            }
+          });
+          panoramaReady=true;
+        }else{
+          svService.getPanorama({location:{lat:10.9596,lng:79.3561},radius:500},(d2,s2)=>{
+            if(s2==='OK'){panorama=new google.maps.StreetViewPanorama(document.getElementById('street-view'),{pano:d2.location.pano,pov:{heading:180,pitch:5},visible:true,addressControl:false,fullscreenControl:false});panoramaReady=true;}
+          });
+        }
+      });
+    }
+
+    function goTo(place){
+      const locs={main_gopuram:{lat:10.9596,lng:79.3561,heading:180},stone_chariot:{lat:10.9594,lng:79.3559,heading:200},musical_steps:{lat:10.9593,lng:79.3558,heading:210},mandapam:{lat:10.9592,lng:79.3557,heading:190},sanctum:{lat:10.9591,lng:79.3556,heading:200}};
+      const target=locs[place];if(!panoramaReady||!target)return;
+      currentActiveLocation=place;
+      const svService=new google.maps.StreetViewService();
+      svService.getPanorama({location:target,radius:300},(data,status)=>{
+        if(status==='OK'){panorama.setPano(data.location.pano);panorama.setPov({heading:target.heading,pitch:5,zoom:1});}
+      });
+      if(audioContextLoaded)playLocationAudio(place);
+    }
+
+    document.getElementById('fullscreen-btn').addEventListener('click',()=>{
+      if(!document.fullscreenElement){document.documentElement.requestFullscreen().catch(e=>console.log(e));}else{document.exitFullscreen();}
+    });
+    document.addEventListener('fullscreenchange',()=>{
+      document.getElementById('fullscreen-btn').innerHTML=document.fullscreenElement?'⛶ Exit Fullscreen':'⛶ Fullscreen';
+    });
+  </script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyATew-TdTHzI9IZjizM8dOJxMBXPB6LRfE&libraries=geometry&callback=initPanorama" async defer></script>
+</body>
+</html>

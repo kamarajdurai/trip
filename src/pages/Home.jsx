@@ -4,79 +4,39 @@ import { useTranslation } from 'react-i18next';
 import { motion, AnimatePresence } from 'framer-motion';
 import Footer from '../components/Footer';
 import '../assets/css/style.css';
-import { usePageTitle, usePageStyle } from '../hooks';
-
+import { usePageTitle } from '../hooks';
 import Navbar from '../components/Navbar';
 
+class HomeParticle {
+    constructor(width, height) {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.9;
+        this.vy = (Math.random() - 0.5) * 0.9;
+        this.size = Math.random() * 1.5 + 0.5;
+    }
+
+    update(width, height) {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = 'rgba(128, 0, 32, 0.6)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
 const Home = () => {
-    const { t } = useTranslation();
     usePageTitle('Premium Travel & Tourism + Instagram Feed');
 
     const navigate = useNavigate();
-    const [selectedEvent, setSelectedEvent] = useState(null);
-
-    const events = [
-        {
-            id: 1,
-            day: '14',
-            month: 'JAN 2026',
-            title: t('home.event_1_title'),
-            desc: t('home.event_1_desc'),
-            img: '/pongal_festival_tn_1767338347356.webp',
-            color: '#ff4e00',
-            longDesc: 'Pongal is a four-day harvest festival celebrated by Tamil people globally. It is dedicated to the Sun God, Surya, and corresponds to Makar Sankranti. The festival marks the beginning of the sun\'s six-month long journey northwards (Uttarayana).'
-        },
-        {
-            id: 2,
-            day: '02',
-            month: 'FEB 2026',
-            title: t('home.event_4_title'),
-            desc: t('home.event_4_desc'),
-            img: '/thaipusam_festival_tn_1767338364844.webp',
-            color: '#ffc107',
-            longDesc: 'Thaipusam is a Hindu festival celebrated by the Tamil community on the full moon in the Tamil month of Thai. It is dedicated to the Hindu god Murugan, the son of Shiva and Parvati.'
-        },
-        {
-            id: 3,
-            day: '01',
-            month: 'MAR 2026',
-            title: t('home.event_6_title'),
-            desc: t('home.event_6_desc'),
-            img: '/natyanjali_dance_tn_1767338382242.webp',
-            color: '#9c27b0',
-            longDesc: 'Natyanjali is an annual classical dance festival in Chidambaram. It is dedicated to Nataraja, the Shiva deity who is the patron of the arts, particularly dance.'
-        },
-        {
-            id: 4,
-            day: '14',
-            month: 'APR 2026',
-            title: 'Puthandu',
-            desc: 'Tamil New Year celebration with traditional feasts and festivities.',
-            img: '/tn verse/src/tn-temple.png',
-            color: '#4caf50',
-            longDesc: 'Puthandu, also known as Puthuvarusham or Tamil New Year, is the first day of year on the Tamil calendar and is traditionally celebrated as a festival.'
-        },
-        {
-            id: 5,
-            day: '28',
-            month: 'APR 2026',
-            title: t('home.event_2_title'),
-            desc: t('home.event_2_desc'),
-            img: '/chithirai_thiruvizha_tn_1767338402401.webp',
-            color: '#f44336',
-            longDesc: 'Chithirai Thiruvizha is a grand month-long celebration in Madurai, depicting the celestial wedding of Goddess Meenakshi to Lord Sundareswarar.'
-        },
-        {
-            id: 6,
-            day: '15',
-            month: 'DEC 2026',
-            title: t('home.event_3_title'),
-            desc: t('home.event_3_desc'),
-            img: '/margazhi_music_tn_1767338428632.webp',
-            color: '#2196f3',
-            longDesc: 'The Margazhi festival of dance and music is a celebration of the arts in Chennai, attracting performers and enthusiasts from across the globe.'
-        }
-    ];
+    const { t } = useTranslation();
     const canvasRef = React.useRef(null);
     const sectionRef = React.useRef(null);
 
@@ -98,35 +58,10 @@ const Home = () => {
         const particleCount = 350; // High density for 'neriya' look
         let animationFrameId;
 
-        class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.vx = (Math.random() - 0.5) * 0.9; // Faster flow
-                this.vy = (Math.random() - 0.5) * 0.9; // Faster flow
-                this.size = Math.random() * 1.5 + 0.5; // Slightly smaller to avoid clutter
-            }
-
-            update() {
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
-                if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
-            }
-
-            draw() {
-                ctx.fillStyle = 'rgba(128, 0, 32, 0.6)';
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-                ctx.fill();
-            }
-        }
-
         const initParticles = () => {
             particles = [];
             for (let i = 0; i < particleCount; i++) {
-                particles.push(new Particle());
+                particles.push(new HomeParticle(canvas.width, canvas.height));
             }
         };
 
@@ -134,8 +69,8 @@ const Home = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
+                particles[i].update(canvas.width, canvas.height);
+                particles[i].draw(ctx);
 
                 // Draw lines
                 for (let j = i; j < particles.length; j++) {
@@ -245,12 +180,6 @@ const Home = () => {
 
                 {/* Content */}
                 <div className="stitch-hero__content">
-                    <img 
-                        src="/tn_tourism_logo.png" 
-                        alt="Tamil Nadu Tourism Logo" 
-                        className="stitch-hero__logo"
-                        style={{ height: '120px', margin: '0 auto 24px', display: 'block' }}
-                    />
                     <h1 className="stitch-hero__title">
                         Tamil Nadu Tourism - <br />
                         <span className="stitch-hero__title-italic">Where Stories Come Alive</span>
@@ -280,6 +209,26 @@ const Home = () => {
                 <canvas ref={canvasRef} id="particleCanvas"></canvas>
                 <div className="cursor-glow"></div>
 
+                {/* Quick Stats Trust Banner */}
+                <section className="tn-stats-banner" style={{ display: 'flex', justifyContent: 'center', gap: '30px', flexWrap: 'wrap', padding: '30px 20px', background: 'rgba(255, 255, 255, 0.75)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(129,0,0,0.08)', position: 'relative', zIndex: 10 }}>
+                    <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: '800', color: '#810000' }}>150+</div>
+                        <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Iconic Destinations</div>
+                    </div>
+                    <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: '800', color: '#810000' }}>50,000+</div>
+                        <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Happy Travelers</div>
+                    </div>
+                    <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: '800', color: '#810000' }}>4.9 ★</div>
+                        <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Experience Rating</div>
+                    </div>
+                    <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                        <div style={{ fontSize: '2rem', fontWeight: '800', color: '#810000' }}>100%</div>
+                        <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Verified Guides</div>
+                    </div>
+                </section>
+
                 {/* Tamil Nadu Wonders Section */}
                 <section id="tn-wonders">
                     <div className="tn-header">
@@ -293,7 +242,7 @@ const Home = () => {
                             <div className="tn-card-content">
                                 <h3>{t('home.culinary_title')}</h3>
                                 <p>{t('home.culinary_desc')}</p>
-                                <button className="explore-btn-3d" style={{ marginTop: '10px', width: '100%' }}>Click Here</button>
+                                <button className="explore-btn-3d" style={{ marginTop: '10px', width: '100%' }}>Explore Cuisine →</button>
                             </div>
                         </div>
                         {/* Card 2 */}
@@ -302,7 +251,7 @@ const Home = () => {
                             <div className="tn-card-content">
                                 <h3>{t('home.agri_title')}</h3>
                                 <p>{t('home.agri_desc')}</p>
-                                <button className="explore-btn-3d" style={{ marginTop: '10px', width: '100%' }}>Click Here</button>
+                                <button className="explore-btn-3d" style={{ marginTop: '10px', width: '100%' }}>Explore Villages →</button>
                             </div>
                         </div>
                         {/* Card 3 */}
@@ -311,7 +260,7 @@ const Home = () => {
                             <div className="tn-card-content">
                                 <h3>{t('home.wellness_title')}</h3>
                                 <p>{t('home.wellness_desc')}</p>
-                                <button className="explore-btn-3d" style={{ marginTop: '10px', width: '100%' }}>Click Here</button>
+                                <button className="explore-btn-3d" style={{ marginTop: '10px', width: '100%' }}>Explore Wellness →</button>
                             </div>
                         </div>
                     </div>
@@ -353,57 +302,8 @@ const Home = () => {
                     </div>
                 </section>
 
-                {/* Upcoming Events Section with Carousel */}
-                <section id="upcoming-events" className="fade-in-section">
-                    <div className="section-header-centered">
-                        <h2>{t('home.events_title')}</h2>
-                        <p>{t('home.events_subtitle')}</p>
-                    </div>
 
-                    <div className="events-carousel-container">
-                        <div className="carousel-track-wrapper">
-                            <motion.div
-                                className="events-carousel-track"
-                                drag="x"
-                                dragConstraints={{ left: -1400, right: 0 }}
-                                whileTap={{ cursor: "grabbing" }}
-                            >
-                                {events.map((event, idx) => (
-                                    <motion.div
-                                        key={idx}
-                                        className="event-card-3d"
-                                        whileHover={{ y: -20, rotateY: 5 }}
-                                        transition={{ type: "spring", stiffness: 300 }}
-                                    >
-                                        <div className="event-card-visual" style={{ '--accent-color': event.color }}>
-                                            <div className="event-image-container">
-                                                <img src={event.img} alt={event.title} />
-                                                <div className="event-overlay-grad"></div>
-                                            </div>
-                                            <div className="event-content-3d">
-                                                <div className="event-badge-3d">
-                                                    <span className="day">{event.day}</span>
-                                                    <span className="month">{event.month}</span>
-                                                </div>
-                                                <h3>{event.title}</h3>
-                                                <p>{event.desc}</p>
-                                                <button
-                                                    className="explore-btn-3d"
-                                                    onClick={() => setSelectedEvent(event)}
-                                                >
-                                                    {t('common.explore_now')}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        </div>
-                        <div className="carousel-hint">
-                            <i className="fa-solid fa-hand-pointer"></i> {t('common.drag_to_explore')}
-                        </div>
-                    </div>
-                </section>
+
 
 
                 {/* Waterfall Timeline Section */}
@@ -464,57 +364,6 @@ const Home = () => {
                     </div>
                 </section >
 
-                {/* Event Modal */}
-                < AnimatePresence >
-                    {selectedEvent && (
-                        <motion.div
-                            className="event-modal-overlay"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            onClick={() => setSelectedEvent(null)}
-                        >
-                            <motion.div
-                                className="event-modal-content"
-                                initial={{ scale: 0.8, y: 100, opacity: 0 }}
-                                animate={{ scale: 1, y: 0, opacity: 1 }}
-                                exit={{ scale: 0.8, y: 100, opacity: 0 }}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <button className="modal-close-btn" onClick={() => setSelectedEvent(null)}>
-                                    <i className="fa-solid fa-xmark"></i>
-                                </button>
-                                <div className="modal-body">
-                                    <div className="modal-image">
-                                        <img src={selectedEvent.img} alt={selectedEvent.title} />
-                                        <div className="modal-badge">
-                                            <span className="day">{selectedEvent.day}</span>
-                                            <span className="month">{selectedEvent.month}</span>
-                                        </div>
-                                    </div>
-                                    <div className="modal-info">
-                                        <div className="modal-header-3d">
-                                            <h2>{selectedEvent.title}</h2>
-                                            <div className="modal-accent-line" style={{ background: selectedEvent.color }}></div>
-                                        </div>
-                                        <p className="modal-long-desc">{selectedEvent.longDesc}</p>
-                                        <div className="modal-footer-3d">
-                                            <button
-                                                className="btn-plan-now small"
-                                                onClick={() => {
-                                                    setSelectedEvent(null);
-                                                    navigate('/plan-trip');
-                                                }}
-                                            >
-                                                Plan Trip <i className="fa-solid fa-arrow-right"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence >
                 <Footer />
             </main >
         </div >

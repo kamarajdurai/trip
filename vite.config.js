@@ -64,7 +64,7 @@ export default defineConfig({
               req.on('end', async () => {
                 try {
                   req.body = body ? JSON.parse(body) : {};
-                } catch (e) {
+                } catch {
                   req.body = body;
                 }
  

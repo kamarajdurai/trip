@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment, getDoc, addDoc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy, doc, updateDoc, increment, addDoc, serverTimestamp } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Chart as ChartJS,
@@ -705,7 +705,7 @@ const WalletDashboard = () => {
                 <SubmitTaskModal
                     onClose={() => setIsTaskModalOpen(false)}
                     onTaskSubmitted={(coins, name) => {
-                        // Task submission verification
+                        handleEarnCoins(coins, name);
                     }}
                 />
             )}
