@@ -31,11 +31,30 @@ const Navbar = () => {
             }
 
             if (currentUser) {
-                // Set up real-time listener for the user's profile
+                const defaultName = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'User');
+                const defaultUsername = currentUser.email ? currentUser.email.split('@')[0] : 'username';
+
+                // Provide immediate initial profile
+                setProfile({
+                    name: defaultName,
+                    username: defaultUsername,
+                    email: currentUser.email,
+                    uid: currentUser.uid,
+                });
+
+                // Set up real-time listener for the user's profile in Firestore
                 unsubscribeProfile = onSnapshot(doc(db, 'users', currentUser.uid), (snapshot) => {
                     if (snapshot.exists()) {
-                        setProfile(snapshot.data());
+                        const data = snapshot.data();
+                        setProfile((prev) => ({
+                            ...prev,
+                            ...data,
+                            name: data.name || currentUser.displayName || defaultName,
+                            username: data.username || defaultUsername,
+                        }));
                     }
+                }, (err) => {
+                    console.warn('Navbar user profile snapshot warning:', err);
                 });
             } else {
                 setProfile(null);
@@ -187,15 +206,15 @@ const Navbar = () => {
             </nav>
 
             {/* Slide-in Panel */}
-            <nav className={`stitch-panel ${sidebarOpen ? 'open' : ''}`} aria-hidden={!sidebarOpen}>
+            <nav className={`stitch-panel ${sidebarOpen ? 'open' : ''}`} aria-hidden={!sidebarOpen} inert={!sidebarOpen ? "" : undefined}>
                 <div className="stitch-panel__header">
                     <div className="stitch-panel__avatar">
                         <span className="material-symbols-outlined" style={{ fontSize: '28px' }}>person</span>
                     </div>
                     {user ? (
                         <>
-                            <h3 className="stitch-panel__name">{profile?.name || 'User'}</h3>
-                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '4px 0' }}>@{profile?.username || 'username'}</p>
+                            <h3 className="stitch-panel__name">{profile?.name || user.displayName || (user.email ? user.email.split('@')[0] : 'User')}</h3>
+                            <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.85rem', margin: '4px 0' }}>@{profile?.username || (user.email ? user.email.split('@')[0] : 'username')}</p>
                             {profile?.location && (
                                 <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.75rem', marginTop: '5px' }}>
                                     <i className="fa-solid fa-location-dot" style={{ marginRight: '5px' }}></i>

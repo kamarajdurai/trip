@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { usePageTitle, usePageStyle, useScript } from '../hooks';
 import { db, auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, setDoc, increment } from 'firebase/firestore';
 
 const parseMarkdown = (text) => {
@@ -22,6 +23,7 @@ const PlanTrip = () => {
 
     const WEATHER_KEY = import.meta.env.WEATHER_API_KEY;
 
+    const [currentUser, setCurrentUser] = useState(auth.currentUser);
     const [loading, setLoading] = useState(false);
     const [loadingMsg, setLoadingMsg] = useState('');
     const [outputHtml, setOutputHtml] = useState(null);
@@ -41,6 +43,13 @@ const PlanTrip = () => {
     // Form State
     const [city, setCity] = useState('');
     const [startDate, setStartDate] = useState('');
+
+    useEffect(() => {
+        const unsub = onAuthStateChanged(auth, (user) => {
+            setCurrentUser(user);
+        });
+        return () => unsub();
+    }, []);
 
     useEffect(() => {
         if (location.state?.destination) {
@@ -416,40 +425,54 @@ ${rawMarkdown}
     };
 
     const saveOrUpdateTrip = async (markdownText, htmlContent) => {
-        const user = auth.currentUser;
-        if (!user) return;
+        const user = currentUser || auth.currentUser;
+        if (!user) {
+            console.warn("No user logged in - skipping trip auto-save");
+            return;
+        }
 
         try {
             let budgetVal = 15000;
             if (budget === 'cheap') budgetVal = 5000;
             else if (budget === 'luxury') budgetVal = 50000;
 
-            const duration = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) || 0;
+            const duration = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) || 1;
 
             const getDestinationImage = (dest) => {
                 const search = dest?.toLowerCase() || '';
+                if (search.includes('chennai') || search.includes('marina')) return '/where-to-go/marina.jpg';
+                if (search.includes('madurai') || search.includes('meenakshi')) return '/where-to-go/meenakshi.jpg';
+                if (search.includes('thanjavur') || search.includes('temple')) return '/where-to-go/big_temple.jpg';
+                if (search.includes('ooty') || search.includes('nilgiri')) return '/where-to-go/ooty.jpg';
+                if (search.includes('kodaikanal') || search.includes('kodai')) return '/where-to-go/kodaikanal.jpg';
+                if (search.includes('kanyakumari')) return '/where-to-go/kanyakumari-beaches-1-1661159465-lb.jpg';
+                if (search.includes('rameshwaram') || search.includes('dhanushkodi')) return '/where-to-go/rameshawaram.jpg';
+                if (search.includes('mahabalipuram') || search.includes('mamallapuram')) return '/where-to-go/mahabalipuram.jpg';
+                if (search.includes('coimbatore') || search.includes('pollachi') || search.includes('valparai')) return '/where-to-go/valparai.jpg';
+                if (search.includes('yercaud') || search.includes('salem')) return '/where-to-go/yercaud.jpg';
+                if (search.includes('chola') || search.includes('gangai')) return '/where-to-go/gangai_vr.jpg';
                 return 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1000&q=80';
             };
 
             const tripData = {
                 title: `AI Trip to ${city || 'Destination'}`,
                 destination: city || 'Destination',
-                startDate: startDate || '',
-                endDate: endDate || '',
+                startDate: startDate || new Date().toISOString().split('T')[0],
+                endDate: endDate || startDate || new Date().toISOString().split('T')[0],
                 plannedBudget: budgetVal,
                 actualExpenditure: 0,
                 savings: budgetVal,
-                transport: 'Car',
-                startPlace: 'Home',
+                transport: travelType === 'solo' ? 'Bike / Public Transport' : 'Car / Train',
+                startPlace: 'Tamil Nadu',
                 endPlace: city || 'Destination',
                 placesVisited: city || 'Destination',
-                distance: 0,
+                distance: 150,
                 memories: markdownText || '',
                 itineraryHtml: htmlContent || '',
                 isAiGenerated: true,
                 coverImage: getDestinationImage(city),
                 userId: user.uid,
-                duration: duration,
+                duration: duration > 0 ? duration : 1,
                 updatedAt: serverTimestamp()
             };
 
@@ -464,12 +487,14 @@ ${rawMarkdown}
                 tripData.createdAt = serverTimestamp();
                 const docRef = await addDoc(collection(db, 'users', user.uid, 'trips'), tripData);
                 setSavedTripId(docRef.id);
+                setIsSaved(true);
 
                 // Update user wallet summary
                 await setDoc(walletRef, {
                     totalTrips: increment(1),
                     totalBudget: increment(budgetVal),
-                    totalSpent: increment(0)
+                    totalSpent: increment(0),
+                    ecopoints: increment(50)
                 }, { merge: true });
                 console.log("Trip saved to history:", docRef.id);
             }
@@ -659,6 +684,9 @@ ${rawMarkdown}
                             <>
                                 <button className="action-btn" disabled style={{ background: 'var(--brand-coral-lt)', color: 'var(--brand-coral)', border: 'none', cursor: 'default', opacity: 0.9 }}>
                                     <i className="fa-solid fa-circle-check"></i> Auto-saved
+                                </button>
+                                <button onClick={() => window.location.href = '/trip-history'} className="action-btn" style={{ background: 'linear-gradient(135deg, #810000 0%, #600018 100%)', color: 'white', border: 'none', boxShadow: '0 4px 14px rgba(128,0,32,0.3)' }}>
+                                    <i className="fa-solid fa-clock-rotate-left"></i> View in Trip History
                                 </button>
                                 <button onClick={generateCalendarEvents} className="action-btn" style={{ background: 'linear-gradient(135deg, #34A853 0%, #1E8A3C 100%)', color: 'white', border: 'none', boxShadow: '0 4px 14px rgba(52,168,83,0.3)' }}>
                                     <i className="fa-solid fa-calendar-plus"></i> Add to Calendar

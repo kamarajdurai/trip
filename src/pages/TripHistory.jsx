@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db, auth } from '../firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 import { collection, onSnapshot, query, orderBy, deleteDoc, doc, updateDoc, increment } from 'firebase/firestore';
 import Navbar from '../components/Navbar';
 import AddTripModal from '../components/AddTripModal';
@@ -16,35 +17,50 @@ const TripHistory = () => {
     const detailsRef = useRef(null);
 
     useEffect(() => {
-        const user = auth.currentUser;
-        if (!user) return;
+        let unsubscribeTrips = null;
 
-        const q = query(
-            collection(db, 'users', user.uid, 'trips'),
-            orderBy('createdAt', 'desc')
-        );
+        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+            if (unsubscribeTrips) {
+                unsubscribeTrips();
+                unsubscribeTrips = null;
+            }
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const tripsData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
-            setTrips(tripsData);
+            if (user) {
+                const q = query(
+                    collection(db, 'users', user.uid, 'trips'),
+                    orderBy('createdAt', 'desc')
+                );
 
-            // Self-healing: Sync Wallet Stats with actual Trips data
-            const totalBudget = tripsData.reduce((sum, t) => sum + (Number(t.plannedBudget) || 0), 0);
-            const totalSpent = tripsData.reduce((sum, t) => sum + (Number(t.actualExpenditure) || 0), 0);
+                unsubscribeTrips = onSnapshot(q, (snapshot) => {
+                    const tripsData = snapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }));
+                    setTrips(tripsData);
 
-            // We use updateDoc to set absolute values, ensuring consistency
-            const walletRef = doc(db, 'users', user.uid, 'wallet', 'summary');
-            updateDoc(walletRef, {
-                totalTrips: tripsData.length,
-                totalBudget: totalBudget,
-                totalSpent: totalSpent
-            }).catch(err => console.error("Error syncing wallet:", err)); // Catch errors silently to not break UI
+                    // Self-healing: Sync Wallet Stats with actual Trips data
+                    const totalBudget = tripsData.reduce((sum, t) => sum + (Number(t.plannedBudget) || 0), 0);
+                    const totalSpent = tripsData.reduce((sum, t) => sum + (Number(t.actualExpenditure) || 0), 0);
+
+                    // We use updateDoc to set absolute values, ensuring consistency
+                    const walletRef = doc(db, 'users', user.uid, 'wallet', 'summary');
+                    updateDoc(walletRef, {
+                        totalTrips: tripsData.length,
+                        totalBudget: totalBudget,
+                        totalSpent: totalSpent
+                    }).catch(err => console.error("Error syncing wallet:", err));
+                }, (err) => {
+                    console.error("Trips snapshot error:", err);
+                });
+            } else {
+                setTrips([]);
+            }
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribeAuth();
+            if (unsubscribeTrips) unsubscribeTrips();
+        };
     }, []);
 
     const [tripToDelete, setTripToDelete] = useState(null);

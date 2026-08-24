@@ -1,63 +1,720 @@
-/* Agri Page Styles - Overhauled to match Medical Theme */
+/* ==========================================================================
+   Tamil Nadu Agri & Rural Tourism - Classic UI with Home Page Theme
+   Features Home Page Design System: Rich Maroon (#800020 / #810000), Gold Accents,
+   Glassmorphic Panels, Particle Backdrop, Cursor Glow, and Premium Hover Dynamics.
+   ========================================================================== */
 
-/* Font Imports */
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Nunito:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
-/* Variables - Matching Medical.css */
 :root {
-    --agri-green: #2d6a4f;
-    /* Same as Med Green */
-    --agri-green-dark: #1b4332;
-    --agri-gold: #d69e2e;
-    /* Med Gold */
-    --glass-bg: rgba(255, 255, 255, 0.25);
-    --glass-border: rgba(255, 255, 255, 0.3);
-    --text-dark: #2d3748;
-    --text-light: #f7fafc;
+    --agri-maroon: #810000;
+    --agri-maroon-dark: #580000;
+    --agri-maroon-light: #a31d1d;
+    --agri-gold: #d4af37;
+    --agri-green-badge: #2d6a4f;
+    --agri-glass-bg: rgba(255, 255, 255, 0.82);
+    --agri-glass-border: rgba(129, 0, 0, 0.12);
+    --agri-text-dark: #1f2937;
+    --agri-text-muted: #555555;
+    --agri-card-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    --agri-card-shadow-hover: 0 20px 40px rgba(129, 0, 0, 0.14);
 }
 
-body {
-    font-family: 'Nunito', sans-serif;
-    color: var(--text-dark);
-    margin: 0;
-    padding: 0;
-    background-color: #f0f4f8;
-    /* Fallback */
-}
-
-.agri-page {
-    min-height: 100vh;
-    padding: 40px 20px;
-    font-family: 'Nunito', sans-serif;
-    background: url('../../../assets/agri/nature_bg.png') no-repeat center center fixed;
-    background-size: cover;
+.agri-home-themed-page {
     position: relative;
+    width: 100%;
+    min-height: 100vh;
+    background-color: #f7faf8;
+    font-family: 'Nunito', sans-serif;
+    color: var(--agri-text-dark);
     overflow-x: hidden;
 }
 
-/* Blur Overlay for Background */
-.agri-page::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(8px);
-    z-index: 0;
+.agri-content-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 80vh;
+    padding-bottom: 60px;
+    background: transparent;
 }
 
-/* Dashboard Layout */
-.landing-dashboard {
+.agri-page-inner {
+    max-width: 1350px;
+    margin: 40px auto 60px auto;
+    padding: 0 24px;
     position: relative;
-    z-index: 1;
+    z-index: 5;
+}
+
+/* --------------------------------------------------------------------------
+   Landing Dashboard - 3 Classic Panels with Home Glassmorphism
+-------------------------------------------------------------------------- */
+.landing-dashboard {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 30px;
-    max-width: 1400px;
+    gap: 32px;
+    animation: fadeInUp 0.7s ease-out;
+}
+
+.landing-dashboard > .dashboard-panel:last-child {
+    grid-column: 1 / -1;
+    width: 90%;
     margin: 0 auto;
 }
+
+@media (max-width: 992px) {
+    .landing-dashboard {
+        grid-template-columns: 1fr;
+    }
+    .landing-dashboard > .dashboard-panel:last-child {
+        width: 100%;
+    }
+}
+
+.dashboard-panel {
+    background: var(--agri-glass-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--agri-glass-border);
+    border-radius: 20px;
+    box-shadow: var(--agri-card-shadow);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+    height: 100%;
+}
+
+.dashboard-panel:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--agri-card-shadow-hover);
+    border-color: rgba(129, 0, 0, 0.25);
+}
+
+/* Panel Header - Home Maroon Theme Gradient */
+.panel-header {
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    color: #ffffff;
+    padding: 22px 28px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    position: relative;
+}
+
+.panel-header h2 {
+    margin: 0;
+    font-family: 'Merriweather', serif;
+    font-size: 1.45rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Panel Footer */
+.panel-footer {
+    margin-top: auto;
+    padding: 20px 24px;
+    background: rgba(255, 255, 255, 0.6);
+    border-top: 1px solid rgba(129, 0, 0, 0.08);
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons - Home UI Style
+-------------------------------------------------------------------------- */
+.btn-green {
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    color: #ffffff;
+    padding: 12px 26px;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px rgba(129, 0, 0, 0.25);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    text-decoration: none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-green:hover:not(:disabled) {
+    background: linear-gradient(135deg, #a31d1d 0%, #810000 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(129, 0, 0, 0.35);
+}
+
+.btn-green:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-wood {
+    background: #ffffff;
+    color: var(--agri-maroon);
+    padding: 11px 24px;
+    border: 1px solid var(--agri-maroon);
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-decoration: none;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.btn-wood:hover {
+    background: var(--agri-maroon);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(129, 0, 0, 0.2);
+}
+
+/* --------------------------------------------------------------------------
+   Panel 1: Plantation Grid
+-------------------------------------------------------------------------- */
+.plantation-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    padding: 22px;
+}
+
+@media (max-width: 576px) {
+    .plantation-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.plantation-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    height: 150px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+}
+
+.plantation-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.plantation-card:hover .plantation-img {
+    transform: scale(1.08);
+}
+
+.plantation-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.82) 100%);
+    color: #ffffff;
+    padding: 12px 14px;
+}
+
+.plantation-overlay h3 {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    font-family: 'Merriweather', serif;
+}
+
+.plantation-overlay p {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    opacity: 0.9;
+}
+
+.plantation-overlay .season {
+    color: #facc15 !important;
+    font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Panel 2: Stay with Farmers
+-------------------------------------------------------------------------- */
+.stay-hero {
+    padding: 20px 22px 10px 22px;
+}
+
+.stay-hero img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stay-features {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 10px 20px;
+}
+
+.feature-pill {
+    background: #fdf2f2;
+    color: var(--agri-maroon);
+    border: 1px solid rgba(129, 0, 0, 0.15);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
+.stay-pricing {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 24px;
+    flex-wrap: wrap;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.4);
+    border-top: 1px solid rgba(129, 0, 0, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   Panel 3: Experience Village Life
+-------------------------------------------------------------------------- */
+.village-scene {
+    width: calc(100% - 44px);
+    margin: 0 auto;
+    display: block;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* --------------------------------------------------------------------------
+   Detail View / Search & Stays View
+-------------------------------------------------------------------------- */
+.detail-container {
+    animation: fadeIn 0.4s ease-out;
+}
+
+.search-container {
+    display: flex;
+    gap: 12px;
+    max-width: 600px;
+    margin: 0 auto 30px auto;
+}
+
+.search-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    background: #ffffff;
+    border: 1px solid rgba(129, 0, 0, 0.2);
+    border-radius: 50px;
+    padding: 8px 18px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.search-input-wrapper .search-icon {
+    color: var(--agri-maroon);
+    font-size: 1rem;
+}
+
+.search-input {
+    border: none;
+    outline: none;
+    width: 100%;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: var(--agri-text-dark);
+}
+
+.search-btn {
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    color: #ffffff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 10px rgba(129, 0, 0, 0.2);
+}
+
+.search-btn:hover {
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #a31d1d 0%, #810000 100%);
+}
+
+.error-state {
+    background: #fff1f2;
+    border-left: 4px solid #e11d48;
+    color: #9f1239;
+    padding: 12px 18px;
+    border-radius: 8px;
+    margin-bottom: 24px;
+    font-size: 0.9rem;
+}
+
+.places-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 22px;
+}
+
+.place-card {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(129, 0, 0, 0.1);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+}
+
+.place-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 28px rgba(129, 0, 0, 0.12);
+    border-color: rgba(129, 0, 0, 0.3);
+}
+
+.place-image {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.place-content {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.place-name {
+    margin: 0 0 6px 0;
+    font-family: 'Merriweather', serif;
+    font-size: 1.15rem;
+    color: #2b1116;
+}
+
+.place-address {
+    font-size: 0.85rem;
+    color: #666666;
+    line-height: 1.45;
+    margin: 0 0 14px 0;
+    flex: 1;
+}
+
+.place-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.place-rating {
+    background: #fef3c7;
+    color: #92400e;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+}
+
+.eco-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 700;
+}
+
+/* --------------------------------------------------------------------------
+   Village Life Sub-Tabs & Activity Grid
+-------------------------------------------------------------------------- */
+.sub-tab-btn {
+    background: #ffffff;
+    border: 1px solid rgba(129, 0, 0, 0.2);
+    padding: 10px 24px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--agri-text-dark);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.sub-tab-btn.active {
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(129, 0, 0, 0.25);
+}
+
+.category-browser {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+}
+
+.cat-btn {
+    background: #ffffff;
+    border: 1px solid rgba(129, 0, 0, 0.15);
+    padding: 6px 18px;
+    border-radius: 30px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.cat-btn:hover {
+    background: #fbf2f3;
+}
+
+.cat-btn.active {
+    background: var(--agri-maroon);
+    color: #ffffff;
+    border-color: var(--agri-maroon);
+}
+
+.activity-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 24px;
+}
+
+.activity-card {
+    background: #ffffff;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid rgba(129, 0, 0, 0.1);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.activity-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 14px 26px rgba(129, 0, 0, 0.12);
+}
+
+.activity-card .eco-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: rgba(129, 0, 0, 0.85);
+    color: #ffffff;
+    z-index: 2;
+}
+
+.activity-img {
+    width: 100%;
+    height: 170px;
+    object-fit: cover;
+}
+
+.activity-content {
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.activity-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+}
+
+.activity-title {
+    margin: 0;
+    font-family: 'Merriweather', serif;
+    font-size: 1.1rem;
+    color: #1f2937;
+}
+
+.activity-price {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--agri-maroon);
+    white-space: nowrap;
+    margin-left: 8px;
+}
+
+.activity-details {
+    font-size: 0.85rem;
+    color: #666;
+    line-height: 1.45;
+    margin: 0 0 14px 0;
+    flex: 1;
+}
+
+.activity-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+/* --------------------------------------------------------------------------
+   Interactive Modals
+-------------------------------------------------------------------------- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    z-index: 9999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.modal-content {
+    background: #ffffff;
+    border-radius: 20px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    animation: fadeIn 0.3s ease;
+}
+
+.close-modal {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.45);
+    color: #ffffff;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.2s ease;
+}
+
+.close-modal:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.modal-header-image {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+}
+
+.modal-body {
+    padding: 24px;
+}
+
+.modal-title {
+    font-family: 'Merriweather', serif;
+    margin: 0 0 6px 0;
+    font-size: 1.5rem;
+    color: var(--agri-maroon);
+}
+
+.info-grid {
+    display: flex;
+    gap: 16px;
+    background: #fbf5f6;
+    padding: 12px 16px;
+    border-radius: 12px;
+    margin: 15px 0;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.info-item h4 {
+    margin: 0;
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+}
+
+.info-item p {
+    margin: 0;
+    font-weight: 700;
+    color: #222;
+}
+
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin: 18px 0;
+}
+
+.gallery-img {
+    width: 100%;
+    height: 70px;
+    border-radius: 8px;
+    object-fit: cover;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 
 /* Animations */
 @keyframes fadeInUp {
@@ -850,19 +1507,139 @@ body {
     border-radius: 6px;
 }
 
-/* Responsive */
-@media (max-width: 900px) {
+/* ==========================================================================
+   AGRI — COMPREHENSIVE RESPONSIVE STYLES
+   Breakpoints: 1200px | 992px | 768px | 576px | 400px
+   ========================================================================== */
+
+/* ── Large Tablet (≤1200px) ── */
+@media (max-width: 1200px) {
+    .agri-page-inner {
+        padding: 0 20px;
+    }
+
     .landing-dashboard {
         grid-template-columns: 1fr;
-        /* Stack panels */
+        gap: 24px;
+    }
+
+    .landing-dashboard > .dashboard-panel:last-child {
+        width: 100%;
+    }
+
+    .gallery-grid {
+        grid-template-columns: repeat(3, 1fr);
     }
 }
 
-@media (max-width: 600px) {
+/* ── Tablet (≤992px) ── */
+@media (max-width: 992px) {
+    .landing-dashboard {
+        grid-template-columns: 1fr;
+    }
+
+    .stitch-hero__title {
+        font-size: clamp(1.6rem, 4vw, 2.5rem) !important;
+    }
+
+    .tn-stats-banner {
+        gap: 18px !important;
+        padding: 20px 16px !important;
+    }
+
+    .support-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .agri-sub-tabs {
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+}
+
+/* ── Mobile Landscape / Large Phone (≤768px) ── */
+@media (max-width: 768px) {
+    /* Hero */
+    .stitch-hero {
+        min-height: 70vh !important;
+    }
+
+    .stitch-hero__title {
+        font-size: clamp(1.3rem, 5vw, 2rem) !important;
+        text-align: center !important;
+        padding: 0 16px;
+    }
+
+    .stitch-hero__buttons {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 0 16px;
+    }
+
+    .stitch-hero__btn {
+        width: 100% !important;
+        max-width: 320px !important;
+        justify-content: center;
+        padding: 12px 20px !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Stats Banner */
+    .tn-stats-banner {
+        gap: 14px !important;
+        padding: 16px 12px !important;
+        justify-content: space-around !important;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 90px !important;
+    }
+
+    .tn-stats-banner > div > div:first-child {
+        font-size: 1.4rem !important;
+    }
+
+    /* Inner */
+    .agri-page-inner {
+        margin: 20px auto 40px auto;
+        padding: 0 16px;
+    }
+
+    /* Landing Dashboard panels */
+    .landing-dashboard {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .dashboard-panel {
+        padding: 20px 16px !important;
+    }
+
+    .panel-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 10px;
+    }
+
+    .panel-title {
+        font-size: 1.2rem !important;
+    }
+
+    /* Farm / Stay / Village grid cards */
+    .farms-grid,
+    .stays-grid,
+    .activities-grid {
+        grid-template-columns: 1fr !important;
+        gap: 16px !important;
+    }
+
+    /* Support grid */
     .support-grid {
         grid-template-columns: 1fr;
     }
 
+    /* Village icons */
     .village-icons {
         flex-wrap: wrap;
     }
@@ -872,8 +1649,32 @@ body {
         margin-bottom: 15px;
     }
 
-    .plantation-grid {
-        grid-template-columns: 1fr;
+    /* Gallery */
+    .gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    /* Sub tabs */
+    .agri-sub-tabs {
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .sub-tab-btn {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        padding: 12px;
+    }
+
+    .modal-content {
+        max-height: 94vh;
+        padding: 20px 16px !important;
+        border-radius: 16px !important;
     }
 
     .info-grid {
@@ -884,7 +1685,7 @@ body {
         grid-template-columns: repeat(2, 1fr);
     }
 
-    /* Timeline Mobile */
+    /* Timeline */
     .timeline::after {
         left: 31px;
     }
@@ -906,6 +1707,139 @@ body {
     .timeline-dot {
         left: 22px !important;
     }
+}
+
+/* ── Small Phone (≤576px) ── */
+@media (max-width: 576px) {
+    .stitch-hero {
+        min-height: 60vh !important;
+    }
+
+    .stitch-hero__title {
+        font-size: clamp(1.1rem, 5.5vw, 1.6rem) !important;
+        line-height: 1.4 !important;
+    }
+
+    .stitch-hero__title-italic {
+        font-size: clamp(1rem, 5vw, 1.4rem) !important;
+    }
+
+    .stitch-hero__scroll-hint {
+        display: none;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 75px !important;
+    }
+
+    .tn-stats-banner > div > div:first-child {
+        font-size: 1.25rem !important;
+    }
+
+    .tn-stats-banner > div > div:last-child {
+        font-size: 0.72rem !important;
+    }
+
+    .agri-page-inner {
+        padding: 0 12px;
+    }
+
+    .v-icon {
+        width: 100%;
+    }
+
+    .agri-sub-tabs {
+        gap: 6px;
+    }
+
+    .sub-tab-btn {
+        padding: 7px 12px;
+        font-size: 0.78rem;
+    }
+
+    .product-card-agri {
+        padding: 14px !important;
+    }
+}
+
+/* ── Very Small (≤400px) ── */
+@media (max-width: 400px) {
+    .stitch-hero__title {
+        font-size: 1rem !important;
+    }
+
+    .stitch-hero__btn {
+        font-size: 0.72rem !important;
+        padding: 10px 14px !important;
+    }
+
+    .tn-stats-banner {
+        gap: 10px !important;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 60px !important;
+    }
+
+    .agri-page-inner {
+        padding: 0 10px;
+    }
+
+    .panel-title {
+        font-size: 1rem !important;
+    }
+}
+
+/* Sub tabs navigation */
+.agri-sub-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 35px;
+}
+
+.sub-tab-btn {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: white;
+    padding: 10px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-weight: 700;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.sub-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.sub-tab-btn.active {
+    background: #2d6a4f;
+    border-color: #2d6a4f;
+    color: white;
+    box-shadow: 0 4px 15px rgba(45, 106, 79, 0.4);
+}
+
+/* Product Card custom hover overrides */
+.product-card-agri {
+    transition: all 0.3s ease;
+}
+
+.product-card-agri:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
+    border-color: #2d6a4f !important;
+}
+
+/* Modal Input adjustments */
+.modal-content input, .modal-content select {
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.modal-content input:focus, .modal-content select:focus {
+    border-color: #2d6a4f !important;
 }
 
 /* Sub tabs navigation */

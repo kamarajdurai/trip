@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth, db } from '../firebase';
-import { createUserWithEmailAndPassword, onAuthStateChanged } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import './Auth.css';
 
@@ -30,7 +30,7 @@ const Signup = () => {
         setLoading(true);
 
         try {
-            const lowerEmail = email.toLowerCase();
+            const lowerEmail = email.toLowerCase().trim();
             const usernameStr = lowerEmail.split('@')[0];
             const lowerUsername = usernameStr.toLowerCase();
 
@@ -45,18 +45,27 @@ const Signup = () => {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
 
+            try {
+                await updateProfile(user, {
+                    displayName: fullName.trim()
+                });
+            } catch (profileErr) {
+                console.warn('Could not update Firebase Auth displayName:', profileErr);
+            }
+
             await setDoc(usernameRef, {
                 uid: user.uid,
-                email: lowerEmail
+                email: lowerEmail,
+                name: fullName.trim()
             });
 
             await setDoc(doc(db, 'users', user.uid), {
                 uid: user.uid,
                 username: lowerUsername,
                 email: lowerEmail,
-                name: fullName,
+                name: fullName.trim(),
                 location: '',
-                phoneNumber: phoneNumber,
+                phoneNumber: phoneNumber.trim(),
                 createdAt: serverTimestamp(),
             });
 

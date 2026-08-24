@@ -1,52 +1,289 @@
-/* Medical Page Styles */
-@import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Nunito:wght@300;400;600;700&display=swap');
+/* ==========================================================================
+   Tamil Nadu Medical & Wellness Tourism - Home Page Design System
+   Rich Maroon (#810000), Glassmorphic Cards, Particle Background
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Nunito:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --med-green: #2d6a4f;
-    --med-teal: #38b2ac;
-    --med-blue: #3182ce;
-    --med-gold: #d69e2e;
-    --glass-bg: rgba(255, 255, 255, 0.25);
-    --glass-border: rgba(255, 255, 255, 0.3);
-    --text-dark: #2d3748;
+    --med-maroon: #810000;
+    --med-maroon-dark: #580000;
+    --med-gold: #d4af37;
+    --med-glass-bg: rgba(255, 255, 255, 0.88);
+    --med-glass-border: rgba(129, 0, 0, 0.12);
+    --med-text-dark: #1f2937;
+    --med-text-muted: #555555;
+    --med-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    --med-shadow-hover: 0 18px 36px rgba(129, 0, 0, 0.14);
 }
 
-.medical-page {
-    min-height: 100vh;
-    font-family: 'Nunito', sans-serif;
-    background: url('../../../assets/medical/wellness.png') no-repeat center center fixed;
-    background-size: cover;
+/* --------------------------------------------------------------------------
+   Page Wrapper
+-------------------------------------------------------------------------- */
+.medical-home-themed-page {
     position: relative;
+    width: 100%;
+    min-height: 100vh;
+    background-color: #fcf9f9;
+    font-family: 'Nunito', sans-serif;
+    color: var(--med-text-dark);
     overflow-x: hidden;
 }
 
-/* Blur Overlay for Background */
-.medical-page::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(8px);
-    z-index: 0;
-}
-
-.medical-content {
+.medical-content-wrapper {
     position: relative;
-    z-index: 1;
-    padding: 40px 20px 40px;
-    max-width: 1400px;
-    margin: 0 auto;
+    width: 100%;
+    min-height: 80vh;
+    padding-bottom: 60px;
+    background: transparent;
 }
 
-/* Header */
-.medical-header {
-    text-align: center;
-    color: white;
-    margin-bottom: 60px;
-    animation: fadeInDown 0.8s ease-out;
+.medical-page-inner {
+    max-width: 1300px;
+    margin: 40px auto 60px auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 5;
+}
+
+/* --------------------------------------------------------------------------
+   Medical Dashboard — 3 Category Cards
+-------------------------------------------------------------------------- */
+.medical-dashboard-section {
+    padding: 10px 0;
+}
+
+.medical-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 28px;
+}
+
+.medical-card-modern {
+    background: var(--med-glass-bg);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--med-glass-border);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: var(--med-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+.medical-card-modern:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--med-shadow-hover);
+    border-color: rgba(129, 0, 0, 0.3);
+}
+
+.medical-card-modern .card-img-wrapper {
+    width: 100%;
+    height: 210px;
+    overflow: hidden;
+}
+
+.medical-card-modern .card-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.medical-card-modern:hover .card-img-wrapper img {
+    transform: scale(1.07);
+}
+
+.card-content-modern {
+    padding: 20px 22px 22px 22px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    gap: 6px;
+}
+
+.card-content-modern h3 {
+    font-family: 'Merriweather', serif;
+    font-size: 1.25rem;
+    color: #2b1116;
+    margin: 0;
+}
+
+.card-content-modern h4 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: var(--med-maroon);
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.card-content-modern p {
+    font-size: 0.92rem;
+    color: #6b7280;
+    line-height: 1.5;
+    flex: 1;
+    margin: 0 0 14px 0;
+}
+
+/* --------------------------------------------------------------------------
+   Search Bar (Medical) — re-uses culinary trails-filters pattern
+-------------------------------------------------------------------------- */
+.trails-filters {
+    display: flex;
+    gap: 12px;
+    background: #ffffff;
+    padding: 8px 10px 8px 18px;
+    border-radius: 50px;
+    border: 1px solid rgba(129, 0, 0, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
+}
+
+.filter-search-wrapper {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.filter-search-input {
+    width: 100%;
+    border: none;
+    outline: none;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: var(--med-text-dark);
+}
+
+/* --------------------------------------------------------------------------
+   Search Results Grid (Peace Grid)
+-------------------------------------------------------------------------- */
+.peace-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 24px;
+    margin-top: 10px;
+}
+
+.peace-card-modern {
+    background: var(--med-glass-bg);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--med-glass-border);
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: var(--med-shadow);
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s ease;
+}
+
+.peace-card-modern:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--med-shadow-hover);
+}
+
+.peace-img-wrapper {
+    width: 100%;
+    height: 180px;
+    overflow: hidden;
+}
+
+.peace-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.4s ease;
+}
+
+.peace-card-modern:hover .peace-img {
+    transform: scale(1.06);
+}
+
+.peace-content-modern {
+    padding: 16px 18px 18px 18px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   Buttons
+-------------------------------------------------------------------------- */
+.btn-green {
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    color: #ffffff;
+    border: none;
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(129, 0, 0, 0.22);
+    white-space: nowrap;
+}
+
+.btn-green:hover {
+    background: linear-gradient(135deg, #a31d1d 0%, #810000 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(129, 0, 0, 0.32);
+}
+
+.btn-wood {
+    background: #fff5f5;
+    color: var(--med-maroon);
+    border: 1px solid rgba(129, 0, 0, 0.2);
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-wood:hover {
+    background: #fce8e8;
+    border-color: var(--med-maroon);
+    transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   Wellness View
+-------------------------------------------------------------------------- */
+.wellness-view {
+    padding: 10px 0;
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --------------------------------------------------------------------------
+   Responsive
+-------------------------------------------------------------------------- */
+@media (max-width: 768px) {
+    .medical-cards-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .peace-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .trails-filters {
+        flex-direction: column;
+        border-radius: 16px;
+        padding: 14px;
+    }
+
+    .filter-search-input {
+        border-bottom: 1px solid rgba(129, 0, 0, 0.15);
+        padding-bottom: 8px;
+    }
 }
 
 .medical-header h1 {
@@ -1185,28 +1422,227 @@
     font-weight: 600;
 }
 
-.summary-row span:last-child {
-    color: #2d3748;
-    font-weight: 700;
+.summary-row span/* ==========================================================================
+   MEDICAL — COMPREHENSIVE RESPONSIVE STYLES
+   Breakpoints: 1200px | 992px | 768px | 576px | 400px
+   ========================================================================== */
+
+/* ── Large Tablet (≤1200px) ── */
+@media (max-width: 1200px) {
+    .medical-page-inner {
+        padding: 0 20px;
+    }
+
+    .medical-cards-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .peace-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-/* Responsive - Search View */
+/* ── Tablet (≤992px) ── */
+@media (max-width: 992px) {
+    .stitch-hero__title {
+        font-size: clamp(1.6rem, 4vw, 2.5rem) !important;
+    }
+
+    .tn-stats-banner {
+        gap: 18px !important;
+        padding: 20px 16px !important;
+    }
+
+    .medical-cards-grid {
+        gap: 20px;
+    }
+}
+
+/* ── Mobile Landscape / Large Phone (≤768px) ── */
 @media (max-width: 768px) {
-    .silent-header h2 { font-size: 2rem; }
-    .silent-search-container { padding: 0 20px; }
-    .silent-input { padding: 15px 25px; font-size: 1rem; }
-    .peace-grid { gap: 20px; }
-    .booking-modal { padding: 30px 22px; border-radius: 20px; }
+    /* Hero */
+    .stitch-hero {
+        min-height: 70vh !important;
+    }
+
+    .stitch-hero__title {
+        font-size: clamp(1.3rem, 5vw, 2rem) !important;
+        text-align: center !important;
+        padding: 0 16px;
+    }
+
+    .stitch-hero__buttons {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 0 16px;
+    }
+
+    .stitch-hero__btn {
+        width: 100% !important;
+        max-width: 320px !important;
+        justify-content: center;
+        padding: 12px 20px !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Stats Banner */
+    .tn-stats-banner {
+        gap: 14px !important;
+        padding: 16px 12px !important;
+        justify-content: space-around !important;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 90px !important;
+    }
+
+    .tn-stats-banner > div > div:first-child {
+        font-size: 1.4rem !important;
+    }
+
+    /* Inner padding */
+    .medical-page-inner {
+        margin: 24px auto 40px auto;
+        padding: 0 16px;
+    }
+
+    /* Category cards → single column */
+    .medical-cards-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .medical-card-modern .card-img-wrapper {
+        height: 180px;
+    }
+
+    /* Search bar pill */
+    .trails-filters {
+        flex-direction: column;
+        border-radius: 16px;
+        padding: 12px 14px;
+        gap: 10px;
+    }
+
+    .filter-search-input {
+        font-size: 0.9rem;
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(129, 0, 0, 0.15);
+    }
+
+    .btn-green,
+    .btn-wood {
+        width: 100%;
+        text-align: center;
+        padding: 12px;
+    }
+
+    /* Peace results grid */
+    .peace-grid {
+        grid-template-columns: 1fr;
+        gap: 18px;
+    }
+
+    .peace-img-wrapper {
+        height: 160px;
+    }
+
+    /* Card actions */
+    .card-actions {
+        flex-direction: column !important;
+    }
+
+    .card-actions button {
+        flex: unset !important;
+        width: 100% !important;
+    }
+
+    /* Booking modal */
+    .booking-modal {
+        padding: 28px 18px;
+        border-radius: 18px;
+    }
 }
 
-@media (max-width: 480px) {
-    .medical-content { padding: 20px 10px; }
-    .silent-header h2 { font-size: 1.8rem; }
-    .wellness-view { padding: 15px; }
-    .peace-grid { grid-template-columns: 1fr; }
-    .peace-img { height: 180px; }
-    .btn-silent-back { padding: 8px 20px; font-size: 0.9rem; }
-    .doctor-select { margin-bottom: 20px !important; }
-    .card-actions { flex-direction: column; }
-    .btn-view-map, .btn-book-slot { min-width: unset; flex: unset; width: 100%; }
+/* ── Small Phone (≤576px) ── */
+@media (max-width: 576px) {
+    .stitch-hero {
+        min-height: 60vh !important;
+    }
+
+    .stitch-hero__title {
+        font-size: clamp(1.1rem, 5.5vw, 1.6rem) !important;
+        line-height: 1.4 !important;
+    }
+
+    .stitch-hero__title-italic {
+        font-size: clamp(1rem, 5vw, 1.4rem) !important;
+    }
+
+    .stitch-hero__scroll-hint {
+        display: none;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 75px !important;
+    }
+
+    .tn-stats-banner > div > div:first-child {
+        font-size: 1.25rem !important;
+    }
+
+    .tn-stats-banner > div > div:last-child {
+        font-size: 0.72rem !important;
+    }
+
+    .card-content-modern {
+        padding: 14px 16px 18px 16px;
+    }
+
+    .card-content-modern h3 {
+        font-size: 1.1rem;
+    }
+
+    .peace-content-modern {
+        padding: 14px 16px 16px 16px;
+    }
+
+    /* Doctor select */
+    .doctor-select-modern {
+        font-size: 0.88rem !important;
+        padding: 10px 14px !important;
+    }
+
+    .booking-modal {
+        padding: 20px 14px;
+    }
+
+    .booking-modal h2 {
+        font-size: 1.4rem !important;
+    }
+}
+
+/* ── Very Small (≤400px) ── */
+@media (max-width: 400px) {
+    .stitch-hero__title {
+        font-size: 1rem !important;
+    }
+
+    .stitch-hero__btn {
+        font-size: 0.72rem !important;
+        padding: 10px 14px !important;
+    }
+
+    .tn-stats-banner {
+        gap: 10px !important;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 60px !important;
+    }
+
+    .medical-page-inner {
+        padding: 0 10px;
+    }
 }

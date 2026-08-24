@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { db, auth } from '../../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, addDoc, updateDoc, increment, serverTimestamp, onSnapshot } from 'firebase/firestore';
 
+import Navbar from '../../../components/Navbar';
+import Footer from '../../../components/Footer';
+import { usePageTitle } from '../../../hooks';
+import '../../../assets/css/style.css';
 import './Agri.css';
 
 // Import images from assets
@@ -16,8 +20,33 @@ import villageLifeHeroImg from '../../../assets/agri/village_life_hero.png';
 import villageActivityImg from '../../../assets/agri/village_activity.png';
 import natureBgImg from '../../../assets/agri/nature_bg.png';
 
-// Reuse API Key logic
 const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
+
+// Particle Background System (matching Home UI)
+class HomeParticle {
+    constructor(width, height) {
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.vx = (Math.random() - 0.5) * 0.9;
+        this.vy = (Math.random() - 0.5) * 0.9;
+        this.size = Math.random() * 1.5 + 0.5;
+    }
+
+    update(width, height) {
+        this.x += this.vx;
+        this.y += this.vy;
+
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = 'rgba(128, 0, 32, 0.5)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
 
 const agriData = {
     plantations: [
@@ -29,11 +58,11 @@ const agriData = {
 
     // Village Life Data
     villageActivities: [
-        { id: 1, category: "Arts", title: "Pottery Making Workshop", price: "₹500", duration: "2 Hours", image: villageActivityImg, desc: "Learn to mold clay with Master Potter Kumaran in his traditional studio." },
-        { id: 2, category: "Farming", title: "Morning Milking & Feeding", price: "₹200", duration: "1 Hour", image: villageActivityImg, desc: "Start your day by connecting with our gentle cows and learning dairy farming." },
-        { id: 3, category: "Culture", title: "Folk Dance performance", price: "₹800", duration: "1.5 Hours", image: villageActivityImg, desc: "Enjoy a vibrant evening of Karagattam and Oyilattam by the village troupe." },
-        { id: 4, category: "Food", title: "Traditional Mud Pot Cooking", price: "₹1200", duration: "3 Hours", image: villageActivityImg, desc: "Cook a full Chettinad meal using earthen pots and firewood stoves." },
-        { id: 5, category: "Arts", title: "Handloom Weaving Demo", price: "₹300", duration: "1 Hour", image: villageActivityImg, desc: "Watch the intricate process of sari weaving on a traditional handloom." }
+        { id: 1, category: "Arts", title: "Pottery Making Workshop", price: "₹500", coinCost: 50, duration: "2 Hours", image: villageActivityImg, desc: "Learn to mold clay with Master Potter Kumaran in his traditional studio." },
+        { id: 2, category: "Farming", title: "Morning Milking & Feeding", price: "₹200", coinCost: 20, duration: "1 Hour", image: villageActivityImg, desc: "Start your day by connecting with our gentle cows and learning dairy farming." },
+        { id: 3, category: "Culture", title: "Folk Dance Performance", price: "₹800", coinCost: 80, duration: "1.5 Hours", image: villageActivityImg, desc: "Enjoy a vibrant evening of Karagattam and Oyilattam by the village troupe." },
+        { id: 4, category: "Food", title: "Traditional Mud Pot Cooking", price: "₹1200", coinCost: 120, duration: "3 Hours", image: villageActivityImg, desc: "Cook a full Chettinad meal using earthen pots and firewood stoves." },
+        { id: 5, category: "Arts", title: "Handloom Weaving Demo", price: "₹300", coinCost: 30, duration: "1 Hour", image: villageActivityImg, desc: "Watch the intricate process of sari weaving on a traditional handloom." }
     ],
 
     villageHosts: [
@@ -49,6 +78,7 @@ const curatedFarmStays = [
         name: "Laxmi Farm Meadows",
         location: "Salem",
         price: 1800,
+        coinCost: 180,
         rating: 4.8,
         image: villageHomeImg,
         activities: "Mango picking, Milking cows, Pottery",
@@ -59,6 +89,7 @@ const curatedFarmStays = [
         name: "Anamalai Valley Farmstay",
         location: "Pollachi",
         price: 2500,
+        coinCost: 250,
         rating: 4.9,
         image: nilgirisTeaImg,
         activities: "Bullock cart rides, Coconut harvesting, Canal swimming",
@@ -69,6 +100,7 @@ const curatedFarmStays = [
         name: "Nellore Paddy Fields Stay",
         location: "Madurai",
         price: 1500,
+        coinCost: 150,
         rating: 4.7,
         image: villageActivityImg,
         activities: "Paddy sowing, Traditional folk music, Bullock carts",
@@ -79,6 +111,7 @@ const curatedFarmStays = [
         name: "Coonoor Tea Hills Homestay",
         location: "Ooty",
         price: 3200,
+        coinCost: 320,
         rating: 4.9,
         image: valparaiCoffeeImg,
         activities: "Tea plucking, Trekking, Campfire",
@@ -86,10 +119,23 @@ const curatedFarmStays = [
     }
 ];
 
+const organicProducts = [
+    { id: 1, name: "Organic Ooty Tea Leaf (250g)", price: 150, coinCost: 15, img: nilgirisTeaImg, desc: "Handpicked premium tea leaves dried organically on Coonoor highlands." },
+    { id: 2, name: "Handpicked Valparai Coffee (500g)", price: 300, coinCost: 30, img: valparaiCoffeeImg, desc: "Medium roast robusta coffee beans with rich mountain flavor profiles." },
+    { id: 3, name: "Kodaikanal Wild Forest Honey (250ml)", price: 200, coinCost: 20, img: kodaikanalOrganicImg, desc: "Pure organic raw honey harvested from wild hives in Palani valleys." },
+    { id: 4, name: "Pollachi Virgin Coconut Oil (1L)", price: 250, coinCost: 25, img: pollachiCoconutImg, desc: "Cold-pressed pure oil made from organically grown premium Pollachi coconuts." }
+];
+
 export default function Agri() {
+    usePageTitle('Agri & Rural Tourism | Tamil Nadu');
+    const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const activeSection = searchParams.get('section'); // 'plantation', 'stay', 'village', 'support'
+    const activeSection = searchParams.get('section'); // 'plantation', 'stay', 'village'
     const [activeSubTab, setActiveSubTab] = useState('explore'); // 'explore' | 'market'
+
+    // --- Canvas & Particle Background ---
+    const canvasRef = useRef(null);
+    const sectionRef = useRef(null);
 
     // --- Search Logic State ---
     const [searchTerm, setSearchTerm] = useState('');
@@ -106,7 +152,7 @@ export default function Agri() {
     // --- Wallet / Booking / Market States ---
     const [currentUser, setCurrentUser] = useState(null);
     const [walletSummary, setWalletSummary] = useState({ ecopoints: 0 });
-    const [activeBooking, setActiveBooking] = useState(null); // stores { type: 'activity'|'plantation', item: Object }
+    const [activeBooking, setActiveBooking] = useState(null);
     const [bookingDate, setBookingDate] = useState('');
     const [bookingGuests, setBookingGuests] = useState(1);
     const [bookingPayment, setBookingPayment] = useState('cash');
@@ -131,6 +177,89 @@ export default function Agri() {
             }
         });
         return () => unsubscribeAuth();
+    }, []);
+
+    // Particle Background System (matching Home UI)
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        const section = sectionRef.current;
+        if (!canvas || !section) return;
+
+        const ctx = canvas.getContext('2d', { alpha: true });
+
+        const updateSize = () => {
+            canvas.width = section.offsetWidth;
+            canvas.height = section.offsetHeight;
+        };
+        updateSize();
+
+        let particles = [];
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 18 : 35;
+        let animationFrameId;
+        let isVisible = false;
+
+        const initParticles = () => {
+            particles = [];
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new HomeParticle(canvas.width, canvas.height));
+            }
+        };
+
+        const animateParticles = () => {
+            if (!isVisible) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const len = particles.length;
+            for (let i = 0; i < len; i++) {
+                particles[i].update(canvas.width, canvas.height);
+                particles[i].draw(ctx);
+
+                for (let j = i + 1; j < len; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const distSq = dx * dx + dy * dy;
+
+                    if (distSq < 6400) {
+                        const distance = Math.sqrt(distSq);
+                        ctx.strokeStyle = `rgba(128, 0, 32, ${0.12 - distance / 800})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            animationFrameId = requestAnimationFrame(animateParticles);
+        };
+
+        initParticles();
+
+        const observer = new IntersectionObserver(([entry]) => {
+            isVisible = entry.isIntersecting;
+            if (isVisible) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(animateParticles);
+            } else {
+                cancelAnimationFrame(animationFrameId);
+            }
+        }, { threshold: 0.05 });
+
+        observer.observe(section);
+
+        const handleResize = () => {
+            updateSize();
+            initParticles();
+        };
+
+        window.addEventListener('resize', handleResize, { passive: true });
+
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('resize', handleResize);
+            cancelAnimationFrame(animationFrameId);
+        };
     }, []);
 
     // Load Google Maps Script
@@ -307,7 +436,7 @@ export default function Agri() {
         if (photo && typeof photo.getUrl === 'function') {
             return photo.getUrl({ maxWidth });
         }
-        return '/assets/agri/nilgiris_tea.png';
+        return nilgirisTeaImg;
     };
 
     const handleSelect = (topic) => {
@@ -327,6 +456,7 @@ export default function Agri() {
         e.preventDefault();
         if (!currentUser) {
             alert("Please login to make bookings.");
+            navigate('/login');
             return;
         }
 
@@ -347,6 +477,7 @@ export default function Agri() {
                 numberOfGuests: Number(bookingGuests),
                 totalAmount: bookingPayment === 'coins' ? totalCostInCoins : totalCostInCash,
                 paymentMethod: bookingPayment,
+                category: 'Agri & Rural Tourism',
                 status: 'confirmed',
                 bookedAt: serverTimestamp()
             });
@@ -367,7 +498,7 @@ export default function Agri() {
                 });
             }
 
-            alert("Booking Confirmed Successfully!");
+            alert("🎉 Booking Confirmed Successfully!");
             setActiveBooking(null);
             setBookingGuests(1);
             setBookingDate('');
@@ -381,6 +512,7 @@ export default function Agri() {
     const handleBuyProduct = async (product, paymentType) => {
         if (!currentUser) {
             alert("Please login to buy products.");
+            navigate('/login');
             return;
         }
 
@@ -399,6 +531,7 @@ export default function Agri() {
                 productId: product.id,
                 cost: paymentType === 'coins' ? product.coinCost : product.price,
                 paymentMethod: paymentType,
+                category: 'Agri Organic Market',
                 orderedAt: serverTimestamp()
             });
 
@@ -418,7 +551,7 @@ export default function Agri() {
                 });
             }
 
-            alert(`Order Placed Successfully! Your package will be shipped shortly.`);
+            alert(`🎉 Order Placed Successfully! Your package will be shipped shortly.`);
         } catch (err) {
             console.error("Order error:", err);
             alert("Failed to place order. Please try again.");
@@ -429,433 +562,246 @@ export default function Agri() {
         ? agriData.villageActivities
         : agriData.villageActivities.filter(a => a.category === activeCategory);
 
-    const organicProducts = [
-        { id: 1, name: "Organic Ooty Tea Leaf (250g)", price: 150, coinCost: 15, img: nilgirisTeaImg, desc: "Handpicked premium tea leaves dried organically on Coonoor highlands." },
-        { id: 2, name: "Handpicked Valparai Coffee (500g)", price: 300, coinCost: 30, img: valparaiCoffeeImg, desc: "Medium roast robusta coffee beans with rich mountain flavor profiles." },
-        { id: 3, name: "Kodaikanal Wild Forest Honey (250ml)", price: 200, coinCost: 20, img: kodaikanalOrganicImg, desc: "Pure organic raw honey harvested from wild hives in Palani valleys." },
-        { id: 4, name: "Pollachi Virgin Coconut Oil (1L)", price: 250, coinCost: 25, img: pollachiCoconutImg, desc: "Cold-pressed pure oil made from organically grown premium Pollachi coconuts." }
-    ];
-
     return (
-        <div className='agri-page'>
-            {!activeSection ? (
-                <div className='landing-dashboard'>
-                    {/* Panel 1: Explore Our Farms */}
-                    <div className='dashboard-panel'>
-                        <div className='panel-header'>
-                            <h2>Explore Our Farms</h2>
-                        </div>
-                        <div className='plantation-grid'>
-                            {agriData.plantations.map(p => (
-                                <div key={p.id} className='plantation-card' onClick={() => handleSelect('plantation')}>
-                                    <img src={p.image} className='plantation-img' alt={p.name} />
-                                    <div className='plantation-overlay'>
-                                        <h3>{p.name}</h3>
-                                        <p>{p.location}</p>
-                                        <p className='season'>Best: {p.season}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        <div className='panel-footer'>
-                            <button className='btn-green' onClick={() => handleSelect('plantation')}>View Details ›</button>
-                            <button className='btn-wood' onClick={() => handleSelect('plantation')}>Book a Visit ›</button>
-                        </div>
-                    </div>
+        <div className="agri-home-themed-page">
+            <Navbar />
 
-                    {/* Panel 2: Stay with Farmers */}
-                    <div className='dashboard-panel'>
-                        <div className='panel-header'>
-                            <h2>Stay with Farmers</h2>
-                        </div>
-                        <div className='stay-hero'>
-                            <img src={villageHomeImg} alt="Chettinad Village Home" />
-                        </div>
-                        <div className='stay-features'>
-                            <span className='feature-pill'>🍲 Home-cooked Meals</span>
-                            <span className='feature-pill'>🌿 Eco-friendly</span>
-                            <span className='feature-pill'>👨‍👩‍👧 Family Friendly</span>
-                        </div>
-                        <div className='stay-pricing'>
-                            <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#333' }}>From ₹2500 / Night</span>
-                            <button className='btn-green' onClick={() => handleSelect('stay')}>Check Availability</button>
-                            <button className='btn-wood' onClick={() => handleSelect('stay')}>Book Now</button>
-                        </div>
-                    </div>
+            {/* Hero Section — Stitch Cinematic Style (Matching Home UI) */}
+            <section className="stitch-hero">
+                <div className="stitch-hero__bg">
+                    <picture>
+                        <source media="(max-width: 768px)" srcSet="/tn verse/src/agri.webp" />
+                        <img
+                            src="/tn verse/src/agri.webp"
+                            alt="Tamil Nadu Agriculture and Rural Landscapes"
+                            className="stitch-hero__img"
+                            width="1920"
+                            height="1080"
+                            fetchPriority="high"
+                            decoding="async"
+                        />
+                    </picture>
+                    <div className="stitch-hero__overlay"></div>
+                </div>
 
-                    {/* Panel 3: Experience Village Life */}
-                    <div className='dashboard-panel'>
-                        <div className='panel-header'>
-                            <h2>Experience Village Life</h2>
-                        </div>
-                        <div className='stay-features' style={{ margin: '15px 0' }}>
-                            <span className='feature-pill'>🏺 Pottery making</span>
-                            <span className='feature-pill'>🐂 Bullock Ride</span>
-                            <span className='feature-pill'>🧵 Handloom Weave</span>
-                        </div>
-                        <img src={villageLifeHeroImg} className='village-scene' alt="Village Life" style={{ maxHeight: '250px', objectFit: 'cover', borderRadius: '15px' }} />
-                        <div className='panel-footer' style={{ marginTop: '20px' }}>
-                            <button className='btn-green' onClick={() => handleSelect('village')}>View Activities ›</button>
-                            <button className='btn-wood' onClick={() => handleSelect('village')}>Book Experience ›</button>
-                        </div>
+                <div className="stitch-hero__content">
+                    <h1 className="stitch-hero__title">
+                        Tamil Nadu Agri Tourism - <br />
+                        <span className="stitch-hero__title-italic">Breathe the Soil, Relive the Roots</span>
+                    </h1>
+
+                    <div className="stitch-hero__buttons">
+                        <button
+                            className="stitch-hero__btn stitch-hero__btn--ar"
+                            onClick={() => {
+                                handleSelect('plantation');
+                                document.getElementById('agri-dashboard-start')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                        >
+                            <span className="material-symbols-outlined">forest</span>
+                            <span>EXPLORE FARMS</span>
+                        </button>
+                        <button
+                            className="stitch-hero__btn stitch-hero__btn--vr"
+                            onClick={() => {
+                                handleSelect('stay');
+                                document.getElementById('agri-dashboard-start')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                        >
+                            <span className="material-symbols-outlined">cottage</span>
+                            <span>FARM STAYS</span>
+                        </button>
+                        <button
+                            className="stitch-hero__btn stitch-hero__btn--vr"
+                            onClick={() => {
+                                handleSelect('village');
+                                document.getElementById('agri-dashboard-start')?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                        >
+                            <span className="material-symbols-outlined">holiday_village</span>
+                            <span>VILLAGE LIFE</span>
+                        </button>
                     </div>
                 </div>
-            ) : (
-                <div className='detail-container'>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <button className='btn-wood' onClick={handleBack}>← Back to Dashboard</button>
-                        {currentUser && (
-                            <div className="wallet-pill-agri" style={{ background: '#800020', color: 'white', padding: '8px 16px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem' }}>
-                                <i className="fa-solid fa-coins"></i> Wallet: {walletSummary.ecopoints} Coins
-                            </div>
-                        )}
-                    </div>
 
-                    <div style={{ marginTop: '30px', animation: 'fadeIn 0.5s' }}>
-                        {/* SEARCH ENABLED PLANTATION VIEW */}
-                        {activeSection === 'plantation' && (
-                            <div className='dashboard-panel' style={{ padding: '30px', minHeight: '600px' }}>
-                                <div className='panel-header' style={{ marginBottom: '30px' }}>
-                                    <h2>Find Farms & Estates</h2>
+                <div className="stitch-hero__scroll-hint" onClick={() => document.getElementById('agri-dashboard-start')?.scrollIntoView({ behavior: 'smooth' })}>
+                    <span className="stitch-hero__scroll-text">Scroll to Discover</span>
+                    <span className="material-symbols-outlined stitch-hero__scroll-icon">expand_more</span>
+                </div>
+            </section>
+
+            {/* Quick Stats Trust Banner (Matching Home UI) */}
+            <section className="tn-stats-banner" style={{ display: 'flex', justifyContent: 'center', gap: '30px', flexWrap: 'wrap', padding: '26px 20px', background: 'rgba(255, 255, 255, 0.85)', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(129,0,0,0.08)', position: 'relative', zIndex: 10 }}>
+                <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#810000' }}>40+</div>
+                    <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Organic Plantations</div>
+                </div>
+                <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#810000' }}>150+</div>
+                    <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Village Homestays</div>
+                </div>
+                <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#810000' }}>25,000+</div>
+                    <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Happy Travelers</div>
+                </div>
+                <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#810000' }}>4.9 ★</div>
+                    <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Authentic Rating</div>
+                </div>
+                <div style={{ textAlign: 'center', minWidth: '130px' }}>
+                    <div style={{ fontSize: '1.8rem', fontWeight: '800', color: '#810000' }}>100%</div>
+                    <div style={{ fontSize: '0.85rem', color: '#555', fontWeight: '500' }}>Direct Farmer Benefit</div>
+                </div>
+            </section>
+
+            {/* Main Content with Unified Particle Background */}
+            <main id="agri-dashboard-start" className="main-content-wrapper agri-content-wrapper" ref={sectionRef}>
+                <canvas ref={canvasRef} id="particleCanvas"></canvas>
+                <div className="cursor-glow"></div>
+
+                <div className="agri-page-inner">
+                    {!activeSection ? (
+                        <div className="landing-dashboard">
+                            {/* Panel 1: Explore Our Farms */}
+                            <div className="dashboard-panel">
+                                <div className="panel-header">
+                                    <h2>Explore Our Farms</h2>
                                 </div>
-
-                                <div className='search-container'>
-                                    <div className='search-input-wrapper'>
-                                        <i className="fa-solid fa-search search-icon"></i>
-                                        <input
-                                            type='text'
-                                            className='search-input'
-                                            placeholder='Search farms (e.g. "Coffee Estate Valparai")'
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                        />
-                                    </div>
-                                    <button className='search-btn' onClick={handleSearch} disabled={loading}>
-                                        {loading ? 'Searching...' : 'Search'}
-                                    </button>
-                                </div>
-
-                                {error && <div className='error-state'><p>{error}</p></div>}
-
-                                {!loading && places.length === 0 && !error && (
-                                    <div>
-                                        <h3 style={{ marginBottom: '20px', color: '#666' }}>Featured Destinations</h3>
-                                        <div className='places-grid'>
-                                            {agriData.plantations.map(p => (
-                                                <div key={p.id} className='place-card' onClick={() => setSearchTerm(p.name + " " + p.location)}>
-                                                    <img src={p.image} className='place-image' alt={p.name} />
-                                                    <div className='place-content'>
-                                                        <h3 className='place-name'>{p.name}</h3>
-                                                        <p className='place-address'>{p.location}</p>
-                                                        <div className='place-meta'>
-                                                            <span>{p.activities}</span>
-                                                            <span style={{ color: 'green' }}>Featured</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                <div className='places-grid'>
-                                    {places.map(place => (
-                                        <div key={place.place_id} className='place-card' onClick={() => handleCardClick(place.place_id)}>
-                                            <img src={getPhotoUrl(place.photos?.[0])} className='place-image' alt={place.name} />
-                                            <div className='place-content'>
-                                                <h3 className='place-name'>{place.name}</h3>
-                                                <p className='place-address'>{place.formatted_address}</p>
-                                                <div className='place-meta'>
-                                                    <div className='place-rating'>★ {place.rating || 'N/A'}</div>
-                                                    <button className='btn-green' style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setActiveBooking({
-                                                            type: 'plantation',
-                                                            item: {
-                                                                title: place.name,
-                                                                hostName: 'Local Estate Manager',
-                                                                price: 200,
-                                                                image: getPhotoUrl(place.photos?.[0])
-                                                            }
-                                                        });
-                                                    }}>Book Visit</button>
-                                                </div>
+                                <div className="plantation-grid">
+                                    {agriData.plantations.map(p => (
+                                        <div key={p.id} className="plantation-card" onClick={() => handleSelect('plantation')}>
+                                            <img src={p.image} className="plantation-img" alt={p.name} />
+                                            <div className="plantation-overlay">
+                                                <h3>{p.name}</h3>
+                                                <p>{p.location}</p>
+                                                <p className="season">Best: {p.season}</p>
                                             </div>
                                         </div>
                                     ))}
                                 </div>
-                            </div>
-                        )}
-
-                        {/* SEARCH ENABLED STAY VIEW */}
-                        {activeSection === 'stay' && (
-                            <div className='dashboard-panel' style={{ padding: '30px', minHeight: '600px' }}>
-                                <div className='panel-header' style={{ marginBottom: '30px' }}>
-                                    <h2>Find Farm Stays & Resorts</h2>
+                                <div className="panel-footer">
+                                    <button className="btn-green" onClick={() => handleSelect('plantation')}>View Details ›</button>
+                                    <button className="btn-wood" onClick={() => handleSelect('plantation')}>Book a Visit ›</button>
                                 </div>
-
-                                <div className='search-container'>
-                                    <div className='search-input-wrapper'>
-                                        <i className="fa-solid fa-search search-icon"></i>
-                                        <input
-                                            type='text'
-                                            className='search-input'
-                                            placeholder='Search stays (e.g. "Salem", "Pollachi", "Ooty")'
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                        />
-                                    </div>
-                                    <button className='search-btn' onClick={handleSearch} disabled={loading}>
-                                        {loading ? 'Searching...' : 'Find Stays'}
-                                    </button>
-                                </div>
-
-                                {error && <div className='error-state'><p>{error}</p></div>}
-
-                                {/* Curated Village Farm Stays based on searched place */}
-                                {localStays.length > 0 && (
-                                    <div style={{ marginBottom: '30px', padding: '0 20px' }}>
-                                        <h3 style={{ marginBottom: '20px', color: '#2d6a4f', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                            🌿 Curated Village Farm Stays in {searchTerm}
-                                        </h3>
-                                        <div className='places-grid'>
-                                            {localStays.map(stay => (
-                                                <div key={stay.id} className='place-card' style={{ border: '2px solid #2d6a4f', position: 'relative' }} onClick={() => setActiveBooking({
-                                                    type: 'stay',
-                                                    item: {
-                                                        title: stay.name,
-                                                        hostName: stay.name + ' Manager',
-                                                        price: stay.price,
-                                                        image: stay.image
-                                                    }
-                                                })}>
-                                                    <div className='eco-badge' style={{ background: '#2d6a4f', color: 'white', position: 'absolute', top: '10px', right: '10px' }}>🌿 Curated Stay</div>
-                                                    <img src={stay.image} className='place-image' alt={stay.name} />
-                                                    <div className='place-content'>
-                                                        <h3 className='place-name'>{stay.name}</h3>
-                                                        <p className='place-address'>{stay.desc}</p>
-                                                        <div style={{ margin: '10px 0', fontSize: '0.85rem', color: '#666' }}>
-                                                            <strong>Farming Activities:</strong> {stay.activities}
-                                                        </div>
-                                                        <div className='place-meta' style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
-                                                            <div className='place-rating'>★ {stay.rating}</div>
-                                                            <span style={{ fontWeight: 'bold', color: '#2d6a4f' }}>₹{stay.price}/night</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {!loading && places.length === 0 && localStays.length === 0 && !error && (
-                                    <div style={{ textAlign: 'center', marginTop: '40px' }}>
-                                        <img src={villageHomeImg} style={{ maxWidth: '100%', borderRadius: '10px', height: '300px', objectFit: 'cover' }} alt="Stay" />
-                                        <p style={{ marginTop: '20px', color: '#666' }}>Enter a location to find authentic farm stays and rustic resorts.</p>
-                                    </div>
-                                )}
-
-                                {/* Other Nearby Stays from Google Places */}
-                                {places.length > 0 && (
-                                    <div style={{ padding: '0 20px' }}>
-                                        <h3 style={{ marginBottom: '20px', color: '#666' }}>
-                                            {localStays.length > 0 ? "Other Stays Nearby" : "Stays Found Nearby"}
-                                        </h3>
-                                        <div className='places-grid'>
-                                            {places.map(place => (
-                                                <div key={place.place_id} className='place-card' onClick={() => handleCardClick(place.place_id)}>
-                                                    <img src={getPhotoUrl(place.photos?.[0])} className='place-image' alt={place.name} />
-                                                    <div className='place-content'>
-                                                        <h3 className='place-name'>{place.name}</h3>
-                                                        <p className='place-address'>{place.formatted_address}</p>
-                                                        <div className='place-meta'>
-                                                            <div className='place-rating'>★ {place.rating || 'N/A'}</div>
-                                                            <button className='btn-green' style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setActiveBooking({
-                                                                    type: 'stay',
-                                                                    item: {
-                                                                        title: place.name,
-                                                                        hostName: 'Resort Host',
-                                                                        price: 2500,
-                                                                        image: getPhotoUrl(place.photos?.[0])
-                                                                    }
-                                                                });
-                                                            }}>Book Stay</button>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
-                        )}
 
-                        {/* VILLAGE LIFE VIEW WITH MAP & MARKET SUBTABS */}
-                        {activeSection === 'village' && (
-                            <div className='dashboard-panel' style={{ padding: '40px', minHeight: '800px' }}>
-                                <div className='panel-header' style={{ marginBottom: '20px' }}>
+                            {/* Panel 2: Stay with Farmers */}
+                            <div className="dashboard-panel">
+                                <div className="panel-header">
+                                    <h2>Stay with Farmers</h2>
+                                </div>
+                                <div className="stay-hero">
+                                    <img src={villageHomeImg} alt="Chettinad Village Home" />
+                                </div>
+                                <div className="stay-features">
+                                    <span className="feature-pill">🍲 Home-cooked Meals</span>
+                                    <span className="feature-pill">🌿 Eco-friendly</span>
+                                    <span className="feature-pill">👨‍👩‍👧 Family Friendly</span>
+                                </div>
+                                <div className="stay-pricing">
+                                    <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#333' }}>From ₹2500 / Night</span>
+                                    <button className="btn-green" onClick={() => handleSelect('stay')}>Check Availability</button>
+                                    <button className="btn-wood" onClick={() => handleSelect('stay')}>Book Now</button>
+                                </div>
+                            </div>
+
+                            {/* Panel 3: Experience Village Life */}
+                            <div className="dashboard-panel">
+                                <div className="panel-header">
                                     <h2>Experience Village Life</h2>
                                 </div>
-
-                                <div className="agri-sub-tabs" style={{ display: 'flex', gap: '15px', marginBottom: '35px', justifyContent: 'center' }}>
-                                    <button className={`sub-tab-btn ${activeSubTab === 'explore' ? 'active' : ''}`} onClick={() => setActiveSubTab('explore')}>Explore Experiences</button>
-                                    <button className={`sub-tab-btn ${activeSubTab === 'market' ? 'active' : ''}`} onClick={() => setActiveSubTab('market')}>Organic Marketplace</button>
+                                <div className="stay-features" style={{ margin: '15px 0' }}>
+                                    <span className="feature-pill">🏺 Pottery making</span>
+                                    <span className="feature-pill">🐂 Bullock Ride</span>
+                                    <span className="feature-pill">🧵 Handloom Weave</span>
                                 </div>
+                                <img src={villageLifeHeroImg} className="village-scene" alt="Village Life" style={{ maxHeight: '250px', objectFit: 'cover', borderRadius: '15px' }} />
+                                <div className="panel-footer" style={{ marginTop: '20px' }}>
+                                    <button className="btn-green" onClick={() => handleSelect('village')}>View Activities ›</button>
+                                    <button className="btn-wood" onClick={() => handleSelect('village')}>Book Experience ›</button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="detail-container">
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                                <button className="btn-wood" onClick={handleBack}>← Back to Dashboard</button>
+                                {currentUser && (
+                                    <div className="wallet-pill-agri" style={{ background: '#800020', color: 'white', padding: '8px 18px', borderRadius: '20px', fontWeight: 'bold', fontSize: '0.9rem', boxShadow: '0 4px 12px rgba(128,0,32,0.2)' }}>
+                                        <i className="fa-solid fa-coins"></i> Wallet: {walletSummary.ecopoints} Coins
+                                    </div>
+                                )}
+                            </div>
 
-                                {activeSubTab === 'explore' ? (
-                                    <>
-                                        <div className='category-browser'>
-                                            {['All', 'Arts', 'Farming', 'Culture', 'Food'].map(cat => (
-                                                <button
-                                                    key={cat}
-                                                    className={`cat-btn ${activeCategory === cat ? 'active' : ''}`}
-                                                    onClick={() => setActiveCategory(cat)}
-                                                >
-                                                    {cat}
-                                                </button>
-                                            ))}
+                            <div style={{ marginTop: '20px', animation: 'fadeIn 0.5s' }}>
+                                {/* SEARCH ENABLED PLANTATION VIEW */}
+                                {activeSection === 'plantation' && (
+                                    <div className="dashboard-panel" style={{ padding: '30px', minHeight: '600px' }}>
+                                        <div className="panel-header" style={{ marginBottom: '30px', borderRadius: '12px' }}>
+                                            <h2>Find Farms & Estates</h2>
                                         </div>
 
-                                        <div className='search-container' style={{ maxWidth: '500px', marginBottom: '40px' }}>
-                                            <div className='search-input-wrapper'>
+                                        <div className="search-container">
+                                            <div className="search-input-wrapper">
                                                 <i className="fa-solid fa-search search-icon"></i>
                                                 <input
-                                                    type='text'
-                                                    className='search-input'
-                                                    placeholder={`Search ${activeCategory === 'All' ? 'Activities' : activeCategory} (e.g. "Chettinad")`}
+                                                    type="text"
+                                                    className="search-input"
+                                                    placeholder='Search farms (e.g. "Coffee Estate Valparai")'
                                                     value={searchTerm}
                                                     onChange={(e) => setSearchTerm(e.target.value)}
                                                     onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
                                                 />
                                             </div>
-                                            <button className='search-btn' onClick={handleSearch} disabled={loading}>
-                                                {loading ? 'Searching...' : 'Explore'}
+                                            <button className="search-btn" onClick={handleSearch} disabled={loading}>
+                                                {loading ? 'Searching...' : 'Search'}
                                             </button>
                                         </div>
 
-                                        {error && <div className='error-state'><p>{error}</p></div>}
+                                        {error && <div className="error-state"><p>{error}</p></div>}
 
-                                        {places.length > 0 ? (
-                                            <div style={{ marginTop: '30px' }}>
-                                                <h3 style={{ marginBottom: '20px' }}>
-                                                    Found {places.length} experiences in "{searchTerm}"
-                                                </h3>
-                                                <div className='places-grid'>
-                                                    {places.map(place => (
-                                                        <div key={place.place_id} className='place-card' onClick={() => handleCardClick(place.place_id)}>
-                                                            <img src={getPhotoUrl(place.photos?.[0])} className='place-image' alt={place.name} />
-                                                            <div className='place-content'>
-                                                                <h3 className='place-name'>{place.name}</h3>
-                                                                <p className='place-address'>{place.formatted_address}</p>
-                                                                <div className='place-meta'>
-                                                                    <div className='place-rating'>★ {place.rating || 'N/A'}</div>
-                                                                    <button className='btn-green' style={{ padding: '4px 10px', fontSize: '0.8rem' }} onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        setActiveBooking({
-                                                                            type: 'activity',
-                                                                            item: {
-                                                                                title: place.name,
-                                                                                hostName: 'Local Village Artisan',
-                                                                                price: 400,
-                                                                                image: getPhotoUrl(place.photos?.[0])
-                                                                            }
-                                                                        });
-                                                                    }}>Book Experience</button>
+                                        {!loading && places.length === 0 && !error && (
+                                            <div>
+                                                <h3 style={{ marginBottom: '20px', color: '#666', fontFamily: 'Merriweather' }}>Featured Destinations</h3>
+                                                <div className="places-grid">
+                                                    {agriData.plantations.map(p => (
+                                                        <div key={p.id} className="place-card" onClick={() => setSearchTerm(p.name + " " + p.location)}>
+                                                            <img src={p.image} className="place-image" alt={p.name} />
+                                                            <div className="place-content">
+                                                                <h3 className="place-name">{p.name}</h3>
+                                                                <p className="place-address">{p.location}</p>
+                                                                <div className="place-meta">
+                                                                    <span>{p.activities}</span>
+                                                                    <span style={{ color: '#800020', fontWeight: 'bold' }}>Featured</span>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     ))}
                                                 </div>
-                                                <div style={{ textAlign: 'center', marginTop: '30px' }}>
-                                                    <button className='btn-wood' onClick={() => setPlaces([])}>Clear Search & Show Standard Trials</button>
-                                                </div>
                                             </div>
-                                        ) : (
-                                            !loading && (
-                                                <div className='animate-fade-in'>
-                                                    <div className='activity-grid'>
-                                                        {filteredActivities.map(act => (
-                                                            <div key={act.id} className='activity-card'>
-                                                                <div className='eco-badge'>🌿 Eco-Friendly</div>
-                                                                <img src={act.image} className='activity-img' alt={act.title} />
-                                                                <div className='activity-content'>
-                                                                    <div className='activity-header'>
-                                                                        <h3 className='activity-title'>{act.title}</h3>
-                                                                        <span className='activity-price'>{act.price}</span>
-                                                                    </div>
-                                                                    <p className='activity-details'>{act.desc}</p>
-                                                                    <div className='activity-meta'>
-                                                                        <span>⏱ {act.duration}</span>
-                                                                        <span>👥 Small Groups</span>
-                                                                        <span>⭐ 4.9</span>
-                                                                    </div>
-                                                                    <button className='btn-green' style={{ width: '100%', marginTop: 'auto' }} onClick={() => setActiveBooking({
-                                                                        type: 'activity',
-                                                                        item: {
-                                                                            title: act.title,
-                                                                            hostName: 'Local Village Artisan',
-                                                                            price: Number(act.price.replace('₹', '')) || 500,
-                                                                            image: act.image
-                                                                        }
-                                                                    })}>Book Experience</button>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-
-                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginTop: '50px' }}>
-                                                        <div className='village-map-container-wrap' style={{ background: 'white', padding: '15px', borderRadius: '16px', border: '1px solid #eee' }}>
-                                                            <h3 style={{ margin: '0 0 15px 0', fontFamily: 'Merriweather' }}>🗺️ Google Interactive Trails Map</h3>
-                                                            <div ref={mapContainerRef} style={{ width: '100%', height: '350px', borderRadius: '12px', background: '#e5e7eb' }}></div>
-                                                        </div>
-
-                                                        <div>
-                                                            <h3 className='timeline-title' style={{ textAlign: 'left', marginBottom: '20px' }}>Meet Your Hosts</h3>
-                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                                                    {agriData.villageHosts.map(host => (
-                                                                        <div key={host.id} style={{ display: 'flex', gap: '15px', background: 'white', padding: '15px', borderRadius: '12px', border: '1px solid #eee' }}>
-                                                                            <img src={host.image} style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} alt={host.name} />
-                                                                            <div>
-                                                                                <h4 style={{ margin: '0 0 5px', fontFamily: 'Merriweather' }}>{host.name}</h4>
-                                                                                <span style={{ color: 'green', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>{host.role}</span>
-                                                                                <div style={{ marginTop: '5px' }}>
-                                                                                    {host.tags.map(tag => (
-                                                                                        <span key={tag} style={{ background: '#f0f0f0', padding: '2px 8px', borderRadius: '10px', fontSize: '0.7rem', marginRight: '5px', color: '#666' }}>{tag}</span>
-                                                                                    ))}
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                    ))}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )
                                         )}
-                                    </>
-                                ) : (
-                                    /* Organic Marketplace View */
-                                    <div className="marketplace-container animate-fade-in">
-                                        <h3 style={{ marginBottom: '20px' }}>🛒 Farm-to-Table Marketplace</h3>
-                                        <p style={{ color: '#666', marginBottom: '30px' }}>Support local farmers directly. Purchase organic items using standard money or your earned Eco Coins!</p>
-                                        <div className="organic-products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '25px' }}>
-                                            {organicProducts.map(prod => (
-                                                <div key={prod.id} className="product-card-agri" style={{ background: 'white', border: '1px solid #eee', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 10px rgba(0,0,0,0.02)' }}>
-                                                    <img src={prod.img} alt={prod.name} style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
-                                                    <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                                                        <h4 style={{ margin: '0 0 10px 0', fontSize: '1.1rem', fontFamily: 'Merriweather' }}>{prod.name}</h4>
-                                                        <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '15px', flex: 1 }}>{prod.desc}</p>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontWeight: 'bold' }}>
-                                                            <span style={{ color: '#333' }}>₹{prod.price}</span>
-                                                            <span style={{ color: '#2ecc71' }}>{prod.coinCost} Coins</span>
-                                                        </div>
-                                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                                            <button className="btn-wood" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }} onClick={() => handleBuyProduct(prod, 'cash')}>Buy Cash</button>
-                                                            <button className="btn-green" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }} onClick={() => handleBuyProduct(prod, 'coins')} disabled={walletSummary.ecopoints < prod.coinCost}>Buy Coins</button>
+
+                                        <div className="places-grid">
+                                            {places.map(place => (
+                                                <div key={place.place_id} className="place-card" onClick={() => handleCardClick(place.place_id)}>
+                                                    <img src={getPhotoUrl(place.photos?.[0])} className="place-image" alt={place.name} />
+                                                    <div className="place-content">
+                                                        <h3 className="place-name">{place.name}</h3>
+                                                        <p className="place-address">{place.formatted_address}</p>
+                                                        <div className="place-meta">
+                                                            <div className="place-rating">★ {place.rating || 'N/A'}</div>
+                                                            <button className="btn-green" style={{ padding: '5px 12px', fontSize: '0.8rem' }} onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setActiveBooking({
+                                                                    type: 'plantation',
+                                                                    item: {
+                                                                        title: place.name,
+                                                                        hostName: 'Local Estate Manager',
+                                                                        price: 200,
+                                                                        image: getPhotoUrl(place.photos?.[0])
+                                                                    }
+                                                                });
+                                                            }}>Book Visit</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -863,111 +809,393 @@ export default function Agri() {
                                         </div>
                                     </div>
                                 )}
-                            </div>
-                        )}
-                    </div>
 
-                    {/* DETAILS MODAL */}
-                    {selectedPlace && (
-                        <div className="modal-overlay" onClick={() => setSelectedPlace(null)}>
-                            <div className="modal-content" onClick={e => e.stopPropagation()}>
-                                <button className="close-modal" onClick={() => setSelectedPlace(null)}>&times;</button>
-                                <img
-                                    src={getPhotoUrl(selectedPlace.photos?.[0], 800)}
-                                    className="modal-header-image"
-                                    alt={selectedPlace.name}
-                                />
-                                <div className="modal-body">
-                                    <h2 className="modal-title">{selectedPlace.name}</h2>
-                                    <p style={{ color: '#666', fontStyle: 'italic' }}>{selectedPlace.formatted_address}</p>
-
-                                    <div className="info-grid">
-                                        <div className="info-item">
-                                            <div className="info-icon">⭐</div>
-                                            <div><h4>Rating</h4><p>{selectedPlace.rating} / 5</p></div>
+                                {/* SEARCH ENABLED STAY VIEW */}
+                                {activeSection === 'stay' && (
+                                    <div className="dashboard-panel" style={{ padding: '30px', minHeight: '600px' }}>
+                                        <div className="panel-header" style={{ marginBottom: '30px', borderRadius: '12px' }}>
+                                            <h2>Find Farm Stays & Resorts</h2>
                                         </div>
-                                        {selectedPlace.formatted_phone_number && (
-                                            <div className="info-item">
-                                                <div className="info-icon">📞</div>
-                                                <div><h4>Phone</h4><p>{selectedPlace.formatted_phone_number}</p></div>
+
+                                        <div className="search-container">
+                                            <div className="search-input-wrapper">
+                                                <i className="fa-solid fa-search search-icon"></i>
+                                                <input
+                                                    type="text"
+                                                    className="search-input"
+                                                    placeholder='Search stays (e.g. "Salem", "Pollachi", "Ooty")'
+                                                    value={searchTerm}
+                                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                                />
+                                            </div>
+                                            <button className="search-btn" onClick={handleSearch} disabled={loading}>
+                                                {loading ? 'Searching...' : 'Find Stays'}
+                                            </button>
+                                        </div>
+
+                                        {error && <div className="error-state"><p>{error}</p></div>}
+
+                                        {/* Curated Village Farm Stays based on searched place */}
+                                        {localStays.length > 0 && (
+                                            <div style={{ marginBottom: '30px', padding: '0 10px' }}>
+                                                <h3 style={{ marginBottom: '20px', color: '#800020', display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Merriweather' }}>
+                                                    🌿 Curated Village Farm Stays in {searchTerm}
+                                                </h3>
+                                                <div className="places-grid">
+                                                    {localStays.map(stay => (
+                                                        <div key={stay.id} className="place-card" style={{ border: '2px solid #800020', position: 'relative' }} onClick={() => setActiveBooking({
+                                                            type: 'stay',
+                                                            item: {
+                                                                title: stay.name,
+                                                                hostName: stay.name + ' Manager',
+                                                                price: stay.price,
+                                                                image: stay.image
+                                                            }
+                                                        })}>
+                                                            <div className="eco-badge" style={{ background: '#800020', color: 'white', position: 'absolute', top: '10px', right: '10px' }}>🌿 Curated Stay</div>
+                                                            <img src={stay.image} className="place-image" alt={stay.name} />
+                                                            <div className="place-content">
+                                                                <h3 className="place-name">{stay.name}</h3>
+                                                                <p className="place-address">{stay.desc}</p>
+                                                                <div style={{ margin: '10px 0', fontSize: '0.85rem', color: '#666' }}>
+                                                                    <strong>Farming Activities:</strong> {stay.activities}
+                                                                </div>
+                                                                <div className="place-meta" style={{ display: 'flex', justifyContent: 'space-between', marginTop: '10px' }}>
+                                                                    <div className="place-rating">★ {stay.rating}</div>
+                                                                    <span style={{ fontWeight: 'bold', color: '#800020' }}>₹{stay.price}/night</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {!loading && places.length === 0 && localStays.length === 0 && !error && (
+                                            <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                                                <img src={villageHomeImg} style={{ maxWidth: '100%', borderRadius: '14px', height: '300px', objectFit: 'cover' }} alt="Stay" />
+                                                <p style={{ marginTop: '20px', color: '#666' }}>Enter a location to find authentic farm stays and rustic resorts.</p>
+                                            </div>
+                                        )}
+
+                                        {/* Other Nearby Stays from Google Places */}
+                                        {places.length > 0 && (
+                                            <div style={{ padding: '0 10px' }}>
+                                                <h3 style={{ marginBottom: '20px', color: '#666', fontFamily: 'Merriweather' }}>
+                                                    {localStays.length > 0 ? "Other Stays Nearby" : "Stays Found Nearby"}
+                                                </h3>
+                                                <div className="places-grid">
+                                                    {places.map(place => (
+                                                        <div key={place.place_id} className="place-card" onClick={() => handleCardClick(place.place_id)}>
+                                                            <img src={getPhotoUrl(place.photos?.[0])} className="place-image" alt={place.name} />
+                                                            <div className="place-content">
+                                                                <h3 className="place-name">{place.name}</h3>
+                                                                <p className="place-address">{place.formatted_address}</p>
+                                                                <div className="place-meta">
+                                                                    <div className="place-rating">★ {place.rating || 'N/A'}</div>
+                                                                    <button className="btn-green" style={{ padding: '5px 12px', fontSize: '0.8rem' }} onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setActiveBooking({
+                                                                            type: 'stay',
+                                                                            item: {
+                                                                                title: place.name,
+                                                                                hostName: 'Resort Host',
+                                                                                price: 2500,
+                                                                                image: getPhotoUrl(place.photos?.[0])
+                                                                            }
+                                                                        });
+                                                                    }}>Book Stay</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         )}
                                     </div>
+                                )}
 
-                                    <div className="gallery-grid">
-                                        {selectedPlace.photos?.slice(1, 5).map((photo, i) => (
-                                            <img key={i} src={getPhotoUrl(photo, 300)} className="gallery-img" alt="Gallery" />
-                                        ))}
+                                {/* VILLAGE LIFE VIEW WITH MAP & MARKET SUBTABS */}
+                                {activeSection === 'village' && (
+                                    <div className="dashboard-panel" style={{ padding: '35px', minHeight: '800px' }}>
+                                        <div className="panel-header" style={{ marginBottom: '20px', borderRadius: '12px' }}>
+                                            <h2>Experience Village Life</h2>
+                                        </div>
+
+                                        <div className="agri-sub-tabs" style={{ display: 'flex', gap: '15px', marginBottom: '35px', justifyContent: 'center' }}>
+                                            <button className={`sub-tab-btn ${activeSubTab === 'explore' ? 'active' : ''}`} onClick={() => setActiveSubTab('explore')}>Explore Experiences</button>
+                                            <button className={`sub-tab-btn ${activeSubTab === 'market' ? 'active' : ''}`} onClick={() => setActiveSubTab('market')}>Organic Marketplace</button>
+                                        </div>
+
+                                        {activeSubTab === 'explore' ? (
+                                            <>
+                                                <div className="category-browser">
+                                                    {['All', 'Arts', 'Farming', 'Culture', 'Food'].map(cat => (
+                                                        <button
+                                                            key={cat}
+                                                            className={`cat-btn ${activeCategory === cat ? 'active' : ''}`}
+                                                            onClick={() => setActiveCategory(cat)}
+                                                        >
+                                                            {cat}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="search-container" style={{ maxWidth: '500px', marginBottom: '40px' }}>
+                                                    <div className="search-input-wrapper">
+                                                        <i className="fa-solid fa-search search-icon"></i>
+                                                        <input
+                                                            type="text"
+                                                            className="search-input"
+                                                            placeholder={`Search ${activeCategory === 'All' ? 'Activities' : activeCategory} (e.g. "Chettinad")`}
+                                                            value={searchTerm}
+                                                            onChange={(e) => setSearchTerm(e.target.value)}
+                                                            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                                        />
+                                                    </div>
+                                                    <button className="search-btn" onClick={handleSearch} disabled={loading}>
+                                                        {loading ? 'Searching...' : 'Explore'}
+                                                    </button>
+                                                </div>
+
+                                                {error && <div className="error-state"><p>{error}</p></div>}
+
+                                                {places.length > 0 ? (
+                                                    <div style={{ marginTop: '30px' }}>
+                                                        <h3 style={{ marginBottom: '20px', fontFamily: 'Merriweather' }}>
+                                                            Found {places.length} experiences in "{searchTerm}"
+                                                        </h3>
+                                                        <div className="places-grid">
+                                                            {places.map(place => (
+                                                                <div key={place.place_id} className="place-card" onClick={() => handleCardClick(place.place_id)}>
+                                                                    <img src={getPhotoUrl(place.photos?.[0])} className="place-image" alt={place.name} />
+                                                                    <div className="place-content">
+                                                                        <h3 className="place-name">{place.name}</h3>
+                                                                        <p className="place-address">{place.formatted_address}</p>
+                                                                        <div className="place-meta">
+                                                                            <div className="place-rating">★ {place.rating || 'N/A'}</div>
+                                                                            <button className="btn-green" style={{ padding: '5px 12px', fontSize: '0.8rem' }} onClick={(e) => {
+                                                                                e.stopPropagation();
+                                                                                setActiveBooking({
+                                                                                    type: 'activity',
+                                                                                    item: {
+                                                                                        title: place.name,
+                                                                                        hostName: 'Local Village Artisan',
+                                                                                        price: 400,
+                                                                                        image: getPhotoUrl(place.photos?.[0])
+                                                                                    }
+                                                                                });
+                                                                            }}>Book Experience</button>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+                                                            <button className="btn-wood" onClick={() => setPlaces([])}>Clear Search & Show Standard Trials</button>
+                                                        </div>
+                                                    </div>
+                                                ) : (
+                                                    !loading && (
+                                                        <div className="animate-fade-in">
+                                                            <div className="activity-grid">
+                                                                {filteredActivities.map(act => (
+                                                                    <div key={act.id} className="activity-card">
+                                                                        <div className="eco-badge">🌿 Eco-Friendly</div>
+                                                                        <img src={act.image} className="activity-img" alt={act.title} />
+                                                                        <div className="activity-content">
+                                                                            <div className="activity-header">
+                                                                                <h3 className="activity-title">{act.title}</h3>
+                                                                                <span className="activity-price">{act.price}</span>
+                                                                            </div>
+                                                                            <p className="activity-details">{act.desc}</p>
+                                                                            <div className="activity-meta">
+                                                                                <span>⏱ {act.duration}</span>
+                                                                                <span>👥 Small Groups</span>
+                                                                                <span>⭐ 4.9</span>
+                                                                            </div>
+                                                                            <button className="btn-green" style={{ width: '100%', marginTop: 'auto' }} onClick={() => setActiveBooking({
+                                                                                type: 'activity',
+                                                                                item: {
+                                                                                    title: act.title,
+                                                                                    hostName: 'Local Village Artisan',
+                                                                                    price: Number(act.price.replace('₹', '')) || 500,
+                                                                                    image: act.image
+                                                                                }
+                                                                            })}>Book Experience</button>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+
+                                                            <div className="village-trails-hosts-wrap" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginTop: '50px' }}>
+                                                                <div className="village-map-container-wrap" style={{ background: 'rgba(255, 255, 255, 0.9)', padding: '20px', borderRadius: '16px', border: '1px solid rgba(128,0,32,0.1)', backdropFilter: 'blur(10px)' }}>
+                                                                    <h3 style={{ margin: '0 0 15px 0', fontFamily: 'Merriweather', color: '#800020' }}>🗺️ Google Interactive Trails Map</h3>
+                                                                    <div ref={mapContainerRef} style={{ width: '100%', height: '350px', borderRadius: '12px', background: '#e5e7eb' }}></div>
+                                                                </div>
+
+                                                                <div>
+                                                                    <h3 className="timeline-title" style={{ textAlign: 'left', marginBottom: '20px', color: '#800020', fontFamily: 'Merriweather' }}>Meet Your Hosts</h3>
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                                                        {agriData.villageHosts.map(host => (
+                                                                            <div key={host.id} style={{ display: 'flex', gap: '15px', background: 'rgba(255, 255, 255, 0.9)', padding: '15px', borderRadius: '14px', border: '1px solid rgba(128,0,32,0.1)', backdropFilter: 'blur(10px)' }}>
+                                                                                <img src={host.image} style={{ width: '80px', height: '80px', borderRadius: '50%', objectFit: 'cover' }} alt={host.name} />
+                                                                                <div>
+                                                                                    <h4 style={{ margin: '0 0 5px', fontFamily: 'Merriweather', color: '#333' }}>{host.name}</h4>
+                                                                                    <span style={{ color: '#800020', fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase' }}>{host.role}</span>
+                                                                                    <div style={{ marginTop: '8px' }}>
+                                                                                        {host.tags.map(tag => (
+                                                                                            <span key={tag} style={{ background: '#f8ecee', padding: '3px 10px', borderRadius: '12px', fontSize: '0.75rem', marginRight: '6px', color: '#800020', fontWeight: '600' }}>{tag}</span>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                )}
+                                            </>
+                                        ) : (
+                                            /* Organic Marketplace View */
+                                            <div className="marketplace-container animate-fade-in">
+                                                <h3 style={{ marginBottom: '10px', fontFamily: 'Merriweather', color: '#800020', fontSize: '1.4rem' }}>🛒 Farm-to-Table Marketplace</h3>
+                                                <p style={{ color: '#666', marginBottom: '30px' }}>Support local farmers directly. Purchase organic items using standard money or your earned Eco Coins!</p>
+                                                <div className="organic-products-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '25px' }}>
+                                                    {organicProducts.map(prod => (
+                                                        <div key={prod.id} className="product-card-agri" style={{ background: 'white', border: '1px solid rgba(128,0,32,0.12)', borderRadius: '16px', overflow: 'hidden', display: 'flex', flexDirection: 'column', boxShadow: '0 4px 15px rgba(0,0,0,0.04)' }}>
+                                                            <img src={prod.img} alt={prod.name} style={{ width: '100%', height: '160px', objectFit: 'cover' }} />
+                                                            <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', flex: 1 }}>
+                                                                <h4 style={{ margin: '0 0 10px 0', fontSize: '1.1rem', fontFamily: 'Merriweather', color: '#333' }}>{prod.name}</h4>
+                                                                <p style={{ fontSize: '0.85rem', color: '#666', marginBottom: '15px', flex: 1, lineHeight: '1.45' }}>{prod.desc}</p>
+                                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px', fontWeight: 'bold' }}>
+                                                                    <span style={{ color: '#333', fontSize: '1.1rem' }}>₹{prod.price}</span>
+                                                                    <span style={{ color: '#800020' }}>{prod.coinCost} Coins</span>
+                                                                </div>
+                                                                <div style={{ display: 'flex', gap: '10px' }}>
+                                                                    <button className="btn-wood" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }} onClick={() => handleBuyProduct(prod, 'cash')}>Buy Cash</button>
+                                                                    <button className="btn-green" style={{ flex: 1, padding: '8px', fontSize: '0.85rem' }} onClick={() => handleBuyProduct(prod, 'coins')} disabled={walletSummary.ecopoints < prod.coinCost}>Buy Coins</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
+                                )}
+                            </div>
 
-                                    <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
-                                        <a
-                                            href={selectedPlace.url}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="btn-wood"
-                                            style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}
-                                        >
-                                            Maps Link
-                                        </a>
-                                        <button className="btn-green" style={{ flex: 1 }} onClick={() => {
-                                            setActiveBooking({
-                                                type: 'stay',
-                                                item: {
-                                                    title: selectedPlace.name,
-                                                    hostName: 'Local Farm Manager',
-                                                    price: 1500,
-                                                    image: getPhotoUrl(selectedPlace.photos?.[0])
-                                                }
-                                            });
-                                            setSelectedPlace(null);
-                                        }}>Book Farm Stay</button>
+                            {/* DETAILS MODAL */}
+                            {selectedPlace && (
+                                <div className="modal-overlay" onClick={() => setSelectedPlace(null)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                                        <button className="close-modal" onClick={() => setSelectedPlace(null)}>&times;</button>
+                                        <img
+                                            src={getPhotoUrl(selectedPlace.photos?.[0], 800)}
+                                            className="modal-header-image"
+                                            alt={selectedPlace.name}
+                                        />
+                                        <div className="modal-body">
+                                            <h2 className="modal-title">{selectedPlace.name}</h2>
+                                            <p style={{ color: '#666', fontStyle: 'italic' }}>{selectedPlace.formatted_address}</p>
+
+                                            <div className="info-grid">
+                                                <div className="info-item">
+                                                    <div className="info-icon">⭐</div>
+                                                    <div><h4>Rating</h4><p>{selectedPlace.rating} / 5</p></div>
+                                                </div>
+                                                {selectedPlace.formatted_phone_number && (
+                                                    <div className="info-item">
+                                                        <div className="info-icon">📞</div>
+                                                        <div><h4>Phone</h4><p>{selectedPlace.formatted_phone_number}</p></div>
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            <div className="gallery-grid">
+                                                {selectedPlace.photos?.slice(1, 5).map((photo, i) => (
+                                                    <img key={i} src={getPhotoUrl(photo, 300)} className="gallery-img" alt="Gallery" />
+                                                ))}
+                                            </div>
+
+                                            <div style={{ display: 'flex', gap: '15px', marginTop: '20px' }}>
+                                                <a
+                                                    href={selectedPlace.url}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    className="btn-wood"
+                                                    style={{ flex: 1, textAlign: 'center', textDecoration: 'none' }}
+                                                >
+                                                    Maps Link
+                                                </a>
+                                                <button className="btn-green" style={{ flex: 1 }} onClick={() => {
+                                                    setActiveBooking({
+                                                        type: 'stay',
+                                                        item: {
+                                                            title: selectedPlace.name,
+                                                            hostName: 'Local Farm Manager',
+                                                            price: 1500,
+                                                            image: getPhotoUrl(selectedPlace.photos?.[0])
+                                                        }
+                                                    });
+                                                    setSelectedPlace(null);
+                                                }}>Book Farm Stay</button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    )}
+                            )}
 
-                    {/* EXPERIENCE BOOKING FORM MODAL */}
-                    {activeBooking && (
-                        <div className="modal-overlay" onClick={() => setActiveBooking(null)}>
-                            <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
-                                <div className="booking-header" style={{ borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '20px' }}>
-                                    <h2 style={{ fontFamily: 'Merriweather', margin: 0 }}>Confirm Booking</h2>
-                                    <button className="close-modal" onClick={() => setActiveBooking(null)}>&times;</button>
+                            {/* EXPERIENCE BOOKING FORM MODAL */}
+                            {activeBooking && (
+                                <div className="modal-overlay" onClick={() => setActiveBooking(null)}>
+                                    <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+                                        <div className="booking-header" style={{ borderBottom: '1px solid #eee', paddingBottom: '15px', marginBottom: '20px' }}>
+                                            <h2 style={{ fontFamily: 'Merriweather', margin: 0, color: '#800020' }}>Confirm Booking</h2>
+                                            <button className="close-modal" onClick={() => setActiveBooking(null)}>&times;</button>
+                                        </div>
+                                        <form onSubmit={handleConfirmBooking}>
+                                            <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #eee' }}>
+                                                <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#666', textTransform: 'uppercase' }}>Selected Activity</p>
+                                                <h4 style={{ margin: 0, fontSize: '1.1rem', fontFamily: 'Merriweather', color: '#333' }}>{activeBooking.item.title || activeBooking.item.name}</h4>
+                                                <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem', color: '#800020', fontWeight: 'bold' }}>Host: {activeBooking.item.hostName}</p>
+                                            </div>
+
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px' }}>
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Date of Visit</label>
+                                                    <input type="date" required value={bookingDate} onChange={e => setBookingDate(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Number of Guests</label>
+                                                    <input type="number" min="1" max="10" required value={bookingGuests} onChange={e => setBookingGuests(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }} />
+                                                </div>
+                                                <div>
+                                                    <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Payment Mode</label>
+                                                    <select value={bookingPayment} onChange={e => setBookingPayment(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }}>
+                                                        <option value="cash">Pay Cash at Venue (₹{(activeBooking.item.price || 100) * bookingGuests})</option>
+                                                        <option value="coins">Pay with Eco Coins ({Math.ceil((activeBooking.item.price || 100) / 10) * bookingGuests} Coins)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <button type="submit" className="btn-green" style={{ width: '100%', padding: '12px', fontSize: '1rem' }}>Confirm & Book Visit</button>
+                                        </form>
+                                    </div>
                                 </div>
-                                <form onSubmit={handleConfirmBooking}>
-                                    <div style={{ background: '#f9f9f9', padding: '15px', borderRadius: '12px', marginBottom: '20px', border: '1px solid #eee' }}>
-                                        <p style={{ margin: '0 0 5px 0', fontSize: '0.85rem', color: '#666', textTransform: 'uppercase' }}>Selected Activity</p>
-                                        <h4 style={{ margin: 0, fontSize: '1.1rem', fontFamily: 'Merriweather', color: '#333' }}>{activeBooking.item.title || activeBooking.item.name}</h4>
-                                        <p style={{ margin: '5px 0 0 0', fontSize: '0.9rem', color: 'green' }}>Host: {activeBooking.item.hostName}</p>
-                                    </div>
-
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', marginBottom: '20px' }}>
-                                        <div>
-                                            <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Date of Visit</label>
-                                            <input type="date" required value={bookingDate} onChange={e => setBookingDate(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }} />
-                                        </div>
-                                        <div>
-                                            <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Number of Guests</label>
-                                            <input type="number" min="1" max="10" required value={bookingGuests} onChange={e => setBookingGuests(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }} />
-                                        </div>
-                                        <div>
-                                            <label style={{ fontSize: '0.85rem', fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>Payment Mode</label>
-                                            <select value={bookingPayment} onChange={e => setBookingPayment(e.target.value)} style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '8px' }}>
-                                                <option value="cash">Pay Cash at Venue (₹{(activeBooking.item.price || 100) * bookingGuests})</option>
-                                                <option value="coins">Pay with Eco Coins ({Math.ceil((activeBooking.item.price || 100) / 10) * bookingGuests} Coins)</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <button type="submit" className="btn-green" style={{ width: '100%', padding: '12px', fontSize: '1rem' }}>Confirm & Book Visit</button>
-                                </form>
-                            </div>
+                            )}
                         </div>
                     )}
                 </div>
-            )}
+
+                <Footer />
+            </main>
         </div>
     );
 }
+
+

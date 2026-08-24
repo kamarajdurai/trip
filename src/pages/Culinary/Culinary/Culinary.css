@@ -1,217 +1,159 @@
-/* Culinary Page Styles - Glassmorphism Theme */
-@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Nunito:wght@300;400;600;700&display=swap');
+/* ==========================================================================
+   Tamil Nadu Culinary Tourism - Home Page Design System
+   Rich Maroon (#810000 / #800020), Gold Accents, Glassmorphic Trail Cards,
+   Regional Filter Chips, and Smooth Hover Dynamics
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;1,300;1,400&family=Nunito:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
-    --primary-orange: #800020;
-    --secondary-red: #c0392b;
-    --text-dark: #2c3e50;
-    --text-light: #ecf0f1;
-    --glass-bg: rgba(255, 255, 255, 0.15);
-    /* Slightly more transparent for dark bg */
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    --culinary-maroon: #810000;
+    --culinary-maroon-dark: #580000;
+    --culinary-gold: #d4af37;
+    --culinary-glass-bg: rgba(255, 255, 255, 0.85);
+    --culinary-glass-border: rgba(129, 0, 0, 0.12);
+    --culinary-text-dark: #1f2937;
+    --culinary-text-muted: #555555;
+    --culinary-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+    --culinary-shadow-hover: 0 18px 36px rgba(129, 0, 0, 0.14);
 }
 
-.culinary-page {
-    min-height: 100vh;
-    font-family: 'Nunito', sans-serif;
-    color: var(--text-light);
-    /* Switch to light text for dark background */
-    background: url('../../../assets/culinary/header_premium.png') no-repeat center center fixed;
-    background-size: cover;
+.culinary-home-themed-page {
     position: relative;
+    width: 100%;
+    min-height: 100vh;
+    background-color: #fcf9f9;
+    font-family: 'Nunito', sans-serif;
+    color: var(--culinary-text-dark);
     overflow-x: hidden;
 }
 
-/* Blur Overlay for Background */
-.culinary-page::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
-    /* Darker overlay for text readability */
-    backdrop-filter: blur(5px);
-    z-index: 0;
-}
-
-/* Hero Section */
-.culinary-hero {
-    height: 50vh;
-    /* Removed specific background, using page background */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: white;
-    margin-bottom: 20px;
+.culinary-content-wrapper {
     position: relative;
-    z-index: 1;
-    /* Above background overlay */
+    width: 100%;
+    min-height: 80vh;
+    padding-bottom: 60px;
+    background: transparent;
 }
 
-.hero-content h1 {
-    font-family: 'Playfair Display', serif;
-    font-size: 4rem;
-    margin-bottom: 10px;
-    text-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
-}
-
-.hero-content h1 span {
-    font-family: 'Dancing Script', cursive;
-    color: #f1c40f;
-    font-size: 5rem;
-}
-
-.hero-content p {
-    font-size: 1.5rem;
-    font-weight: 300;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-}
-
-/* Food Trails Section */
 .food-trails-section {
-    max-width: 1400px;
-    margin: 0 auto;
-    padding: 20px;
+    max-width: 1300px;
+    margin: 40px auto 60px auto;
+    padding: 0 24px;
     position: relative;
-    z-index: 1;
+    z-index: 5;
 }
 
-.section-header {
-    text-align: center;
-    margin-bottom: 40px;
+/* --------------------------------------------------------------------------
+   Regional Filter Chips
+-------------------------------------------------------------------------- */
+.culinary-region-chips {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
 }
 
-.section-header h2 {
-    font-family: 'Playfair Display', serif;
-    font-size: 2.5rem;
-    color: #fff;
-    /* White title on dark theme */
-    margin-bottom: 10px;
-    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+.culinary-chip {
+    background: #ffffff;
+    border: 1px solid rgba(129, 0, 0, 0.18);
+    color: var(--culinary-maroon);
+    padding: 8px 20px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
-.section-header p {
-    color: #e0e0e0;
-    font-style: italic;
+.culinary-chip:hover {
+    background: #fdf2f2;
+    transform: translateY(-1px);
 }
 
-/* Filters */
+.culinary-chip.active {
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(129, 0, 0, 0.25);
+}
+
+/* --------------------------------------------------------------------------
+   Trails Search Bar
+-------------------------------------------------------------------------- */
 .trails-filters {
     display: flex;
-    justify-content: center;
-    gap: 15px;
-    margin-bottom: 40px;
-    flex-wrap: wrap;
-    align-items: center;
+    gap: 12px;
+    max-width: 650px;
+    margin: 0 auto 40px auto;
+    background: #ffffff;
+    padding: 8px 10px 8px 18px;
+    border-radius: 50px;
+    border: 1px solid rgba(129, 0, 0, 0.2);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.05);
 }
 
 .filter-search-wrapper {
-    position: relative;
-    margin-right: 15px;
+    display: flex;
+    align-items: center;
+    flex: 1;
 }
 
 .filter-search-input {
-    padding: 12px 25px;
-    border-radius: 30px;
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    width: 250px;
-    /* Base width for desktop */
-    outline: none;
-    font-family: 'Nunito', sans-serif;
-    background: rgba(255, 255, 255, 0.9);
-    color: #333;
-    transition: width 0.3s ease, box-shadow 0.3s ease;
-    font-size: 1rem;
-}
-
-.filter-search-input:focus {
-    width: 300px;
-    /* Expand on focus */
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-}
-
-.btn-apply-filters {
-    padding: 12px 30px;
-    border-radius: 30px;
-    background: linear-gradient(135deg, #d35400, #c0392b);
-    color: white;
+    width: 100%;
     border: none;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.3s;
-    box-shadow: 0 4px 15px rgba(211, 84, 0, 0.4);
-    font-size: 1rem;
+    outline: none;
+    font-size: 0.95rem;
+    font-family: inherit;
+    color: var(--culinary-text-dark);
 }
 
-.btn-apply-filters:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(211, 84, 0, 0.6);
-}
-
-/* Grid System - 4 Columns */
+/* --------------------------------------------------------------------------
+   Food Trails Cards Grid
+-------------------------------------------------------------------------- */
 .trails-grid {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 25px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px;
 }
 
-/* Glassmorphism Card Styles */
 .trail-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid var(--glass-border);
+    background: var(--culinary-glass-bg);
+    backdrop-filter: blur(14px);
+    border: 1px solid var(--culinary-glass-border);
     border-radius: 20px;
-    /* More rounded */
     overflow: hidden;
-    box-shadow: var(--card-shadow);
-    transition: transform 0.4s ease, box-shadow 0.4s ease, background 0.4s;
+    box-shadow: var(--culinary-shadow);
     display: flex;
     flex-direction: column;
+    transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
 .trail-card:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
-    background: rgba(255, 255, 255, 0.2);
-    /* Slightly brighter on hover */
-    border-color: rgba(255, 255, 255, 0.4);
-}
-
-/* Theme Colors - Gradients for Headers */
-.card-madurai .card-header-bar {
-    background: linear-gradient(135deg, rgba(231, 76, 60, 0.9), rgba(192, 57, 43, 0.9));
-}
-
-.card-chennai .card-header-bar {
-    background: linear-gradient(135deg, rgba(52, 152, 219, 0.9), rgba(41, 128, 185, 0.9));
-}
-
-.card-coimbatore .card-header-bar {
-    background: linear-gradient(135deg, rgba(46, 204, 113, 0.9), rgba(39, 174, 96, 0.9));
-}
-
-.card-chettinad .card-header-bar {
-    background: linear-gradient(135deg, rgba(211, 84, 0, 0.9), rgba(160, 64, 0, 0.9));
+    transform: translateY(-6px);
+    box-shadow: var(--culinary-shadow-hover);
+    border-color: rgba(129, 0, 0, 0.3);
 }
 
 .card-header-bar {
-    padding: 15px;
-    color: white;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.2rem;
-    font-weight: bold;
-    text-align: center;
-    letter-spacing: 0.5px;
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    color: #ffffff;
+    padding: 14px 20px;
+    font-family: 'Merriweather', serif;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .card-images {
-    height: 180px;
+    position: relative;
     width: 100%;
+    height: 190px;
     overflow: hidden;
 }
 
@@ -517,57 +459,260 @@
     }
 }
 
-@media (max-width: 600px) {
+/* ==========================================================================
+   CULINARY — COMPREHENSIVE RESPONSIVE STYLES
+   Breakpoints: 1200px | 992px | 768px | 576px | 400px
+   ========================================================================== */
+
+/* ── Large Tablet / Small Desktop (≤1200px) ── */
+@media (max-width: 1200px) {
+    .food-trails-section {
+        padding: 0 20px;
+    }
+
     .trails-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .modal-gallery {
         grid-template-columns: repeat(2, 1fr);
-        /* 2 cols on mobile */
+        gap: 22px;
+    }
+}
+
+/* ── Tablet (≤992px) ── */
+@media (max-width: 992px) {
+    .stitch-hero__title {
+        font-size: clamp(1.6rem, 4vw, 2.5rem) !important;
     }
 
-    .culinary-hero {
-        height: 40vh;
+    .tn-stats-banner {
+        gap: 18px !important;
+        padding: 20px 16px !important;
     }
 
-    .hero-content h1 {
-        font-size: 2.5rem;
+    .culinary-region-chips {
+        gap: 8px;
     }
 
-    .hero-content h1 span {
-        font-size: 3.5rem;
+    .culinary-chip {
+        padding: 7px 16px;
+        font-size: 0.84rem;
     }
 
-    .hero-content p {
-        font-size: 1.1rem;
+    .trails-filters {
+        max-width: 100%;
+        margin: 0 0 30px 0;
+    }
+}
+
+/* ── Mobile Landscape / Large Phone (≤768px) ── */
+@media (max-width: 768px) {
+    /* Hero */
+    .stitch-hero {
+        min-height: 70vh !important;
     }
 
-    /* Responsive Filters */
+    .stitch-hero__title {
+        font-size: clamp(1.3rem, 5vw, 2rem) !important;
+        text-align: center !important;
+        padding: 0 16px;
+    }
+
+    .stitch-hero__buttons {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 0 16px;
+    }
+
+    .stitch-hero__btn {
+        width: 100% !important;
+        max-width: 320px !important;
+        justify-content: center;
+        padding: 12px 20px !important;
+        font-size: 0.8rem !important;
+    }
+
+    /* Stats Banner */
+    .tn-stats-banner {
+        gap: 14px !important;
+        padding: 16px 12px !important;
+        justify-content: space-around !important;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 90px !important;
+    }
+
+    .tn-stats-banner > div > div:first-child {
+        font-size: 1.4rem !important;
+    }
+
+    /* Section header */
+    .food-trails-section {
+        margin: 24px auto 40px auto;
+        padding: 0 16px;
+    }
+
+    /* Chips */
+    .culinary-region-chips {
+        gap: 8px;
+        padding: 0 4px;
+    }
+
+    .culinary-chip {
+        padding: 6px 14px;
+        font-size: 0.8rem;
+    }
+
+    /* Search bar */
     .trails-filters {
         flex-direction: column;
-        gap: 15px;
+        border-radius: 16px;
+        padding: 12px 14px;
+        gap: 10px;
+        max-width: 100%;
+        margin: 0 0 28px 0;
+    }
+
+    .filter-search-wrapper {
         width: 100%;
     }
 
-    .filter-search-wrapper,
-    .filter-search-input,
-    .btn-apply-filters {
-        width: 100%;
-        margin-right: 0;
+    .filter-search-input {
+        font-size: 0.9rem;
+        padding: 4px 0;
+        border-bottom: 1px solid rgba(129, 0, 0, 0.15);
     }
 
-    .filter-search-input:focus {
+    .btn-green {
         width: 100%;
-        /* No expansion on mobile, just full width */
+        text-align: center;
+        padding: 12px;
+    }
+
+    /* Grid → single column */
+    .trails-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    /* Card image height */
+    .card-images {
+        height: 200px;
+    }
+
+    /* Modal */
+    .modal-overlay {
+        padding: 12px;
     }
 
     .modal-content {
-        padding: 20px;
-        width: 95%;
+        max-height: 94vh;
+        border-radius: 16px;
     }
 
-    .modal-header h2 {
-        font-size: 1.8rem;
+    .modal-header {
+        padding: 18px 18px 8px 18px !important;
+    }
+
+    .modal-gallery {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+        padding: 0 16px !important;
+    }
+
+    .modal-gallery img {
+        height: 65px !important;
+    }
+
+    .modal-details-grid {
+        padding: 0 16px 20px 16px !important;
+    }
+}
+
+/* ── Small Phone (≤576px) ── */
+@media (max-width: 576px) {
+    .stitch-hero {
+        min-height: 60vh !important;
+    }
+
+    .stitch-hero__title {
+        font-size: clamp(1.1rem, 5.5vw, 1.6rem) !important;
+        line-height: 1.4 !important;
+    }
+
+    .stitch-hero__title-italic {
+        font-size: clamp(1rem, 5vw, 1.4rem) !important;
+    }
+
+    .stitch-hero__scroll-hint {
+        display: none;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 75px !important;
+    }
+
+    .tn-stats-banner > div > div:first-child {
+        font-size: 1.25rem !important;
+    }
+
+    .tn-stats-banner > div > div:last-child {
+        font-size: 0.72rem !important;
+    }
+
+    .card-header-bar {
+        font-size: 0.95rem;
+        padding: 12px 16px;
+    }
+
+    .card-images {
+        height: 180px;
+    }
+
+    .card-info {
+        padding: 14px 16px;
+        gap: 8px;
+    }
+
+    .info-label {
+        font-size: 0.68rem;
+    }
+
+    .info-val {
+        font-size: 0.82rem;
+    }
+
+    .btn-explore-trail {
+        margin: 0 16px 16px 16px;
+        padding: 10px 16px;
+        font-size: 0.82rem;
+    }
+}
+
+/* ── Very Small (≤400px) ── */
+@media (max-width: 400px) {
+    .stitch-hero__title {
+        font-size: 1rem !important;
+    }
+
+    .stitch-hero__btn {
+        font-size: 0.72rem !important;
+        padding: 10px 14px !important;
+    }
+
+    .tn-stats-banner {
+        gap: 10px !important;
+    }
+
+    .tn-stats-banner > div {
+        min-width: 60px !important;
+    }
+
+    .culinary-chip {
+        font-size: 0.75rem;
+        padding: 5px 11px;
+    }
+
+    .food-trails-section {
+        padding: 0 10px;
     }
 }

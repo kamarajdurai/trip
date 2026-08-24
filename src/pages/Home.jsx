@@ -40,13 +40,13 @@ const Home = () => {
     const canvasRef = React.useRef(null);
     const sectionRef = React.useRef(null);
 
-    // Particle Background System
+    // Particle Background System (Optimized for High Performance & Low CPU)
     useEffect(() => {
         const canvas = canvasRef.current;
         const section = sectionRef.current;
         if (!canvas || !section) return;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: true });
 
         const updateSize = () => {
             canvas.width = section.offsetWidth;
@@ -55,8 +55,11 @@ const Home = () => {
         updateSize();
 
         let particles = [];
-        const particleCount = 350; // High density for 'neriya' look
+        // Optimized count to keep CPU usage < 1%
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 18 : 35;
         let animationFrameId;
+        let isVisible = false;
 
         const initParticles = () => {
             particles = [];
@@ -66,20 +69,22 @@ const Home = () => {
         };
 
         const animateParticles = () => {
+            if (!isVisible) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            for (let i = 0; i < particles.length; i++) {
+            const len = particles.length;
+            for (let i = 0; i < len; i++) {
                 particles[i].update(canvas.width, canvas.height);
                 particles[i].draw(ctx);
 
-                // Draw lines
-                for (let j = i; j < particles.length; j++) {
+                for (let j = i + 1; j < len; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    const distSq = dx * dx + dy * dy;
 
-                    if (distance < 120) {
-                        ctx.strokeStyle = `rgba(128, 0, 32, ${0.1 - distance / 1200})`;
+                    if (distSq < 6400) { // 80px distance squared (avoids Math.sqrt)
+                        const distance = Math.sqrt(distSq);
+                        ctx.strokeStyle = `rgba(128, 0, 32, ${0.12 - distance / 800})`;
                         ctx.lineWidth = 0.5;
                         ctx.beginPath();
                         ctx.moveTo(particles[i].x, particles[i].y);
@@ -92,16 +97,28 @@ const Home = () => {
         };
 
         initParticles();
-        animateParticles();
+
+        const observer = new IntersectionObserver(([entry]) => {
+            isVisible = entry.isIntersecting;
+            if (isVisible) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = requestAnimationFrame(animateParticles);
+            } else {
+                cancelAnimationFrame(animationFrameId);
+            }
+        }, { threshold: 0.05 });
+
+        observer.observe(section);
 
         const handleResize = () => {
             updateSize();
             initParticles();
         };
 
-        window.addEventListener('resize', handleResize);
+        window.addEventListener('resize', handleResize, { passive: true });
 
         return () => {
+            observer.disconnect();
             window.removeEventListener('resize', handleResize);
             cancelAnimationFrame(animationFrameId);
         };
@@ -173,6 +190,8 @@ const Home = () => {
                             className="stitch-hero__img"
                             width="1920"
                             height="1080"
+                            fetchPriority="high"
+                            decoding="async"
                         />
                     </picture>
                     <div className="stitch-hero__overlay"></div>
@@ -238,7 +257,7 @@ const Home = () => {
                     <div className="tn-cards-container">
                         {/* Card 1 */}
                         <div className="tn-card" onClick={() => navigate('/culinary')} style={{ cursor: 'pointer' }}>
-                            <img src="/tn verse/src/memories-cuisine.webp" alt="Culinary Tourism" width="400" height="280" />
+                            <img src="/tn verse/src/memories-cuisine.webp" alt="Culinary Tourism" width="400" height="280" loading="lazy" decoding="async" />
                             <div className="tn-card-content">
                                 <h3>{t('home.culinary_title')}</h3>
                                 <p>{t('home.culinary_desc')}</p>
@@ -247,7 +266,7 @@ const Home = () => {
                         </div>
                         {/* Card 2 */}
                         <div className="tn-card" onClick={() => navigate('/agri')} style={{ cursor: 'pointer' }}>
-                            <img src="/tn verse/src/agri.webp" alt="Agri & Rural Tourism" width="400" height="280" />
+                            <img src="/tn verse/src/agri.webp" alt="Agri & Rural Tourism" width="400" height="280" loading="lazy" decoding="async" />
                             <div className="tn-card-content">
                                 <h3>{t('home.agri_title')}</h3>
                                 <p>{t('home.agri_desc')}</p>
@@ -256,7 +275,7 @@ const Home = () => {
                         </div>
                         {/* Card 3 */}
                         <div className="tn-card" onClick={() => navigate('/medical')} style={{ cursor: 'pointer' }}>
-                            <img src="/tn verse/src/medical.webp" alt="Wellness & Medical Tourism" width="400" height="280" />
+                            <img src="/tn verse/src/medical.webp" alt="Wellness & Medical Tourism" width="400" height="280" loading="lazy" decoding="async" />
                             <div className="tn-card-content">
                                 <h3>{t('home.wellness_title')}</h3>
                                 <p>{t('home.wellness_desc')}</p>
@@ -278,7 +297,7 @@ const Home = () => {
                                 </button>
                             </div>
                             <div className="zig-zag-image">
-                                <img src="/tn verse/src/ar_preview.png" alt="AR Experience Preview" />
+                                <img src="/tn verse/src/ar_preview.webp" alt="AR Experience Preview" loading="lazy" decoding="async" />
                             </div>
                         </div>
                     </div>
@@ -296,15 +315,11 @@ const Home = () => {
                                 </button>
                             </div>
                             <div className="zig-zag-image">
-                                <img src="/where-to-go/gangai_vr.jpg" alt="VR Experience Preview" />
+                                <img src="/where-to-go/gangai_vr.jpg" alt="VR Experience Preview" loading="lazy" decoding="async" />
                             </div>
                         </div>
                     </div>
                 </section>
-
-
-
-
 
                 {/* Waterfall Timeline Section */}
                 <section id="historical-timeline" className="fade-in-section">
@@ -340,10 +355,10 @@ const Home = () => {
                             </motion.div>
                         ))}
                     </div>
-                </section >
+                </section>
 
                 {/* About Us Section */}
-                < section id="about-us" className="fade-in-section" >
+                <section id="about-us" className="fade-in-section">
                     <div className="about-container">
                         <div className="about-text">
                             <h2>{t('home.about_title')}</h2>
@@ -358,11 +373,11 @@ const Home = () => {
                             </motion.button>
                         </div>
                         <div className="about-image">
-                            <img src="/tn verse/src/tour.webp" alt="Tamil Nadu Tourism" width="600" height="400" />
+                            <img src="/tn verse/src/tour.webp" alt="Tamil Nadu Tourism" width="600" height="400" loading="lazy" decoding="async" />
                             <div className="image-overlay-subtle"></div>
                         </div>
                     </div>
-                </section >
+                </section>
 
                 <Footer />
             </main >

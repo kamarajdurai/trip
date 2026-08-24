@@ -30,10 +30,10 @@ const Login = () => {
         setLoading(true);
 
         try {
-            let email = identifier;
+            let email = identifier.trim();
 
             if (!identifier.includes('@')) {
-                const usernameRef = doc(db, 'usernames', identifier.toLowerCase());
+                const usernameRef = doc(db, 'usernames', identifier.trim().toLowerCase());
                 const usernameSnap = await getDoc(usernameRef);
 
                 if (usernameSnap.exists()) {
@@ -44,7 +44,51 @@ const Login = () => {
                 }
             }
 
-            await signInWithEmailAndPassword(auth, email, password);
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+
+            // Ensure profile exists and has user details in Firestore
+            try {
+                const userRef = doc(db, 'users', user.uid);
+                const userSnap = await getDoc(userRef);
+                const lowerEmail = (user.email || email || '').toLowerCase();
+                const derivedUsername = lowerEmail ? lowerEmail.split('@')[0] : `user_${user.uid.slice(0, 6)}`;
+
+                if (!userSnap.exists()) {
+                    const nameToSave = user.displayName || derivedUsername;
+                    await setDoc(userRef, {
+                        uid: user.uid,
+                        username: derivedUsername,
+                        email: lowerEmail,
+                        name: nameToSave,
+                        location: '',
+                        phoneNumber: user.phoneNumber || '',
+                        createdAt: serverTimestamp(),
+                    }, { merge: true });
+
+                    await setDoc(doc(db, 'usernames', derivedUsername), {
+                        uid: user.uid,
+                        email: lowerEmail,
+                        name: nameToSave
+                    }, { merge: true });
+
+                    await setDoc(doc(db, 'users', user.uid, 'wallet', 'summary'), {
+                        ecopoints: 0,
+                        points: 0,
+                        level: 'Bronze',
+                        updateat: serverTimestamp(),
+                        CreatedAt: serverTimestamp()
+                    }, { merge: true });
+                } else {
+                    const existingData = userSnap.data();
+                    if (!existingData.name && user.displayName) {
+                        await setDoc(userRef, { name: user.displayName }, { merge: true });
+                    }
+                }
+            } catch (firestoreErr) {
+                console.warn('Firestore user profile sync warning on login:', firestoreErr);
+            }
+
             navigate('/home');
         } catch {
             setError('Invalid credentials');
@@ -65,15 +109,16 @@ const Login = () => {
             try {
                 const userRef = doc(db, 'users', user.uid);
                 const userSnap = await getDoc(userRef);
+                const lowerEmail = (user.email || '').toLowerCase();
+                const lowerUsername = lowerEmail ? lowerEmail.split('@')[0] : `user_${user.uid.slice(0, 6)}`;
+                const nameToSave = user.displayName || lowerUsername;
 
                 if (!userSnap.exists()) {
-                    const lowerEmail = (user.email || '').toLowerCase();
-                    const lowerUsername = lowerEmail ? lowerEmail.split('@')[0] : `user_${user.uid.slice(0, 6)}`;
-
                     if (lowerUsername) {
                         await setDoc(doc(db, 'usernames', lowerUsername), {
                             uid: user.uid,
-                            email: lowerEmail
+                            email: lowerEmail,
+                            name: nameToSave
                         }, { merge: true });
                     }
 
@@ -81,7 +126,7 @@ const Login = () => {
                         uid: user.uid,
                         username: lowerUsername,
                         email: lowerEmail,
-                        name: user.displayName || '',
+                        name: nameToSave,
                         location: '',
                         phoneNumber: user.phoneNumber || '',
                         createdAt: serverTimestamp(),
@@ -94,6 +139,11 @@ const Login = () => {
                         updateat: serverTimestamp(),
                         CreatedAt: serverTimestamp()
                     }, { merge: true });
+                } else {
+                    const existingData = userSnap.data();
+                    if (!existingData.name && user.displayName) {
+                        await setDoc(userRef, { name: user.displayName }, { merge: true });
+                    }
                 }
             } catch (firestoreErr) {
                 console.warn('Firestore profile sync warning:', firestoreErr);
