@@ -61,45 +61,61 @@ const Login = () => {
             const result = await signInWithPopup(auth, googleProvider);
             const user = result.user;
 
-            // Check if user already exists in Firestore
-            const userRef = doc(db, 'users', user.uid);
-            const userSnap = await getDoc(userRef);
+            // Sync user profile to Firestore safely
+            try {
+                const userRef = doc(db, 'users', user.uid);
+                const userSnap = await getDoc(userRef);
 
-            if (!userSnap.exists()) {
-                // First-time Google login – create Firestore documents
-                const lowerEmail = user.email.toLowerCase();
-                const lowerUsername = lowerEmail.split('@')[0];
+                if (!userSnap.exists()) {
+                    const lowerEmail = (user.email || '').toLowerCase();
+                    const lowerUsername = lowerEmail ? lowerEmail.split('@')[0] : `user_${user.uid.slice(0, 6)}`;
 
-                await setDoc(doc(db, 'usernames', lowerUsername), {
-                    uid: user.uid,
-                    email: lowerEmail
-                });
+                    if (lowerUsername) {
+                        await setDoc(doc(db, 'usernames', lowerUsername), {
+                            uid: user.uid,
+                            email: lowerEmail
+                        }, { merge: true });
+                    }
 
-                await setDoc(userRef, {
-                    uid: user.uid,
-                    username: lowerUsername,
-                    email: lowerEmail,
-                    name: user.displayName || '',
-                    location: '',
-                    phoneNumber: user.phoneNumber || '',
-                    createdAt: serverTimestamp(),
-                });
+                    await setDoc(userRef, {
+                        uid: user.uid,
+                        username: lowerUsername,
+                        email: lowerEmail,
+                        name: user.displayName || '',
+                        location: '',
+                        phoneNumber: user.phoneNumber || '',
+                        createdAt: serverTimestamp(),
+                    }, { merge: true });
 
-                await setDoc(doc(db, 'users', user.uid, 'wallet', 'summary'), {
-                    ecopoints: 0,
-                    points: 0,
-                    level: 'Bronze',
-                    updateat: serverTimestamp(),
-                    CreatedAt: serverTimestamp()
-                });
+                    await setDoc(doc(db, 'users', user.uid, 'wallet', 'summary'), {
+                        ecopoints: 0,
+                        points: 0,
+                        level: 'Bronze',
+                        updateat: serverTimestamp(),
+                        CreatedAt: serverTimestamp()
+                    }, { merge: true });
+                }
+            } catch (firestoreErr) {
+                console.warn('Firestore profile sync warning:', firestoreErr);
             }
 
             navigate('/home');
         } catch (err) {
+            console.error('Google sign-in error:', err);
             if (err.code === 'auth/popup-closed-by-user') {
-                setError('Google sign-in was cancelled.');
+                setError('Google sign-in popup was closed.');
+            } else if (err.code === 'auth/popup-blocked') {
+                setError('Sign-in popup was blocked by your browser. Please allow popups for this site.');
+            } else if (err.code === 'auth/unauthorized-domain') {
+                setError('Domain unauthorized: please add this domain (e.g. localhost) to Firebase Console > Authentication > Settings > Authorized domains.');
+            } else if (err.code === 'auth/operation-not-allowed') {
+                setError('Google Sign-In is not enabled in Firebase Console. Please enable it under Authentication > Sign-in method.');
+            } else if (err.code === 'auth/cancelled-popup-request') {
+                setError('A sign-in window is already active.');
+            } else if (err.code === 'auth/network-request-failed') {
+                setError('Network error during sign-in. Please check your internet connection.');
             } else {
-                setError('Google sign-in failed. Please try again.');
+                setError(err.message || 'Google sign-in failed. Please try again.');
             }
         } finally {
             setLoading(false);

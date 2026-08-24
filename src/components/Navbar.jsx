@@ -104,7 +104,7 @@ const Navbar = () => {
 
                     {/* Desktop Nav Links */}
                     <div className="stitch-navbar__links">
-                        <Link to="/home" className={`stitch-navbar__link ${location.pathname === '/home' ? 'stitch-navbar__link--active' : ''}`}>
+                        <Link to="/home" className={`stitch-navbar__link ${location.pathname === '/home' || location.pathname === '/' ? 'stitch-navbar__link--active' : ''}`}>
                             <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>home</span>
                             {t('navbar.home')}
                         </Link>
