@@ -43,7 +43,7 @@ function App() {
                         <Route path="/login" element={<Login />} />
                         <Route path="/signup" element={<Signup />} />
 
-                        <Route path="/preview/plan-trip" element={<ProtectedRoute><PlanTrip /></ProtectedRoute>} />
+                        <Route path="/preview/plan-trip" element={<PlanTrip />} />
                         <Route path="/preview/ar" element={<ProtectedRoute><AR /></ProtectedRoute>} />
                         <Route path="/preview/vr" element={<VR />} />
 
