@@ -1,10 +1,10 @@
 import React, { lazy, Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Signup from './pages/Signup';
 
-// Lazy load route components
+// Lazy load route components for peak traffic performance
+const Login = lazy(() => import('./pages/Login'));
+const Signup = lazy(() => import('./pages/Signup'));
 const PlanTrip = lazy(() => import('./pages/PlanTrip'));
 const VR = lazy(() => import('./pages/VR'));
 const AR = lazy(() => import('./pages/AR'));
@@ -22,7 +22,6 @@ const WalletDashboard = lazy(() => import('./pages/WalletDashboard'));
 const WhereToGo = lazy(() => import('./pages/WhereToGo'));
 
 import { TripProvider } from './context/TripContext';
-
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -30,11 +29,12 @@ function App() {
         <TripProvider>
             <Router>
                 <Suspense fallback={
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0f4f8', color: '#2d6a4f', fontFamily: 'sans-serif', fontWeight: 'bold' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#0f172a', color: '#ffffff', fontFamily: 'system-ui, sans-serif' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ width: '40px', height: '40px', border: '4px solid #2d6a4f', borderRightColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite', margin: '0 auto 15px' }}></div>
-                            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-                            <div>Loading TNVerse...</div>
+                            <div style={{ width: '48px', height: '48px', border: '3px solid rgba(251, 191, 36, 0.2)', borderTopColor: '#fbbf24', borderRightColor: '#810000', borderRadius: '50%', animation: 'tnSpin 0.8s linear infinite', margin: '0 auto 16px' }}></div>
+                            <style>{`@keyframes tnSpin { to { transform: rotate(360deg); } }`}</style>
+                            <div style={{ fontSize: '1.1rem', fontWeight: '700', letterSpacing: '1px' }}>TN<span style={{ color: '#810000' }}>Verse</span></div>
+                            <div style={{ fontSize: '0.8rem', color: '#94a3b8', marginTop: '4px' }}>Loading experience...</div>
                         </div>
                     </div>
                 }>

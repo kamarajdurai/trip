@@ -13,6 +13,7 @@
     "@fontsource/dancing-script": "^5.2.8",
     "@fontsource/playfair-display": "^5.2.8",
     "@google/generative-ai": "^0.24.1",
+    "@sentry/react": "^10.71.0",
     "chart.js": "^4.5.1",
     "firebase": "^12.7.0",
     "framer-motion": "^12.23.26",

@@ -1530,3 +1530,81 @@ body {
         font-size: 2.5rem;
     }
 }
+
+/* ====== MOBILE BOTTOM NAVIGATION BAR (MATCHING REFERENCE) ====== */
+.mobile-bottom-nav {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .mobile-bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 62px;
+        background: rgba(255, 255, 255, 0.94);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(0, 0, 0, 0.08);
+        box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        z-index: 9995;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        box-sizing: border-box;
+    }
+
+    .mobile-bottom-nav__item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-decoration: none;
+        background: transparent;
+        border: none;
+        padding: 6px 14px;
+        color: #64748b;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        font-size: 0.72rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        gap: 4px;
+        flex: 1;
+        max-width: 85px;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .mobile-bottom-nav__icon {
+        font-size: 1.25rem;
+        line-height: 1;
+        transition: transform 0.2s ease, color 0.2s ease;
+    }
+
+    .mobile-bottom-nav__label {
+        letter-spacing: -0.01em;
+        line-height: 1;
+    }
+
+    .mobile-bottom-nav__item--active {
+        color: #810000 !important;
+        font-weight: 700;
+    }
+
+    .mobile-bottom-nav__item--active .mobile-bottom-nav__icon {
+        transform: scale(1.1);
+        color: #810000;
+    }
+
+    .mobile-bottom-nav__item:active {
+        transform: scale(0.92);
+    }
+
+    /* Prevent bottom content from getting obscured by the fixed bottom nav */
+    body {
+        padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+    }
+}

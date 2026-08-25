@@ -284,6 +284,51 @@ const Navbar = () => {
             {sidebarOpen && (
                 <div className="stitch-panel__overlay" onClick={closeSidebar} />
             )}
+
+            {/* Mobile Bottom Navigation Bar */}
+            <nav className="mobile-bottom-nav">
+                <Link
+                    to="/home"
+                    className={`mobile-bottom-nav__item ${location.pathname === '/home' || location.pathname === '/' ? 'mobile-bottom-nav__item--active' : ''}`}
+                    onClick={() => { if (sidebarOpen) closeSidebar(); }}
+                >
+                    <i className="mobile-bottom-nav__icon fa-solid fa-house"></i>
+                    <span className="mobile-bottom-nav__label">Home</span>
+                </Link>
+
+                <Link
+                    to="/plan-trip"
+                    className={`mobile-bottom-nav__item ${location.pathname === '/plan-trip' ? 'mobile-bottom-nav__item--active' : ''}`}
+                    onClick={() => { if (sidebarOpen) closeSidebar(); }}
+                >
+                    <i className="mobile-bottom-nav__icon fa-solid fa-map-location-dot"></i>
+                    <span className="mobile-bottom-nav__label">Trip</span>
+                </Link>
+
+                <Link
+                    to="/vr"
+                    className={`mobile-bottom-nav__item ${location.pathname === '/vr' ? 'mobile-bottom-nav__item--active' : ''}`}
+                    onClick={() => { if (sidebarOpen) closeSidebar(); }}
+                >
+                    <i className="mobile-bottom-nav__icon fa-solid fa-vr-cardboard"></i>
+                    <span className="mobile-bottom-nav__label">VR</span>
+                </Link>
+
+                <button
+                    type="button"
+                    className={`mobile-bottom-nav__item ${sidebarOpen || location.pathname === '/wallet' || location.pathname === '/login' || location.pathname === '/signup' ? 'mobile-bottom-nav__item--active' : ''}`}
+                    onClick={() => {
+                        if (user) {
+                            toggleSidebar();
+                        } else {
+                            navigate('/login');
+                        }
+                    }}
+                >
+                    <i className={`mobile-bottom-nav__icon ${sidebarOpen || location.pathname === '/wallet' ? 'fa-solid' : 'fa-regular'} fa-user`}></i>
+                    <span className="mobile-bottom-nav__label">Profile</span>
+                </button>
+            </nav>
         </>
     );
 };
