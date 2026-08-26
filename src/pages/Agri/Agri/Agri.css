@@ -1798,50 +1798,6 @@
     margin-bottom: 35px;
 }
 
-.sub-tab-btn {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: white;
-    padding: 10px 24px;
-    border-radius: 30px;
-    cursor: pointer;
-    font-weight: 700;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
-}
-
-.sub-tab-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-}
-
-.sub-tab-btn.active {
-    background: #2d6a4f;
-    border-color: #2d6a4f;
-    color: white;
-    box-shadow: 0 4px 15px rgba(45, 106, 79, 0.4);
-}
-
-/* Product Card custom hover overrides */
-.product-card-agri {
-    transition: all 0.3s ease;
-}
-
-.product-card-agri:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
-    border-color: #2d6a4f !important;
-}
-
-/* Modal Input adjustments */
-.modal-content input, .modal-content select {
-    outline: none;
-    transition: border-color 0.2s ease;
-}
-
-.modal-content input:focus, .modal-content select:focus {
-    border-color: #2d6a4f !important;
-}
-
 /* Sub tabs navigation */
 .agri-sub-tabs {
     display: flex;
@@ -1867,10 +1823,10 @@
 }
 
 .sub-tab-btn.active {
-    background: #2d6a4f;
-    border-color: #2d6a4f;
+    background: #810000;
+    border-color: #810000;
     color: white;
-    box-shadow: 0 4px 15px rgba(45, 106, 79, 0.4);
+    box-shadow: 0 4px 15px rgba(129, 0, 0, 0.4);
 }
 
 /* Product Card custom hover overrides */
@@ -1881,7 +1837,7 @@
 .product-card-agri:hover {
     transform: translateY(-5px);
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1) !important;
-    border-color: #2d6a4f !important;
+    border-color: #810000 !important;
 }
 
 /* Modal Input adjustments */
@@ -1891,5 +1847,746 @@
 }
 
 .modal-content input:focus, .modal-content select:focus {
-    border-color: #2d6a4f !important;
+    border-color: #810000 !important;
+}
+
+/* ==========================================================================
+   HOTEL & LIFESTYLE FARMSTAY STYLES (Stay With Farmers)
+   ========================================================================== */
+
+/* District and Amenity Filter Bars */
+.district-filter-container {
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(129, 0, 0, 0.12);
+    border-radius: 18px;
+    padding: 20px 24px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.district-filter-label {
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: #810000;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.district-filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.district-pill {
+    background: #ffffff;
+    border: 1.5px solid rgba(129, 0, 0, 0.18);
+    color: #333333;
+    padding: 8px 18px;
+    border-radius: 30px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.district-pill:hover {
+    border-color: #810000;
+    background: #fff5f5;
+    color: #810000;
+    transform: translateY(-1px);
+}
+
+.district-pill.active {
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    border-color: #810000;
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(129, 0, 0, 0.25);
+}
+
+.amenity-filter-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(129, 0, 0, 0.12);
+}
+
+.amenity-pill {
+    background: #f8faf9;
+    border: 1px solid #d1d5db;
+    color: #4b5563;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.amenity-pill:hover {
+    border-color: #2d6a4f;
+    color: #2d6a4f;
+}
+
+.amenity-pill.active {
+    background: #2d6a4f;
+    border-color: #2d6a4f;
+    color: #ffffff;
+}
+
+/* Hotel Farmstay Cards Grid */
+.farmstay-hotel-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 30px;
+    margin-top: 25px;
+}
+
+@media (max-width: 768px) {
+    .farmstay-hotel-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.farmstay-card-hotel {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid rgba(129, 0, 0, 0.1);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+    transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+}
+
+.farmstay-card-hotel:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 36px rgba(129, 0, 0, 0.12);
+    border-color: rgba(129, 0, 0, 0.25);
+}
+
+.farmstay-img-wrap {
+    position: relative;
+    width: 100%;
+    height: 230px;
+    overflow: hidden;
+}
+
+.farmstay-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s ease;
+}
+
+.farmstay-card-hotel:hover .farmstay-img {
+    transform: scale(1.05);
+}
+
+.farmstay-top-badges {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    right: 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+}
+
+.district-badge-chip {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rating-badge-chip {
+    background: #ffffff;
+    color: #810000;
+    font-size: 0.8rem;
+    font-weight: 800;
+    padding: 5px 12px;
+    border-radius: 20px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Host Profile Tag inside Card */
+.farmer-host-bar {
+    background: #fdf8f4;
+    border-bottom: 1px solid rgba(129, 0, 0, 0.08);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.farmer-host-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #810000;
+}
+
+.farmer-host-info {
+    flex: 1;
+}
+
+.farmer-host-name {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: #810000;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.farmer-host-tag {
+    font-size: 0.72rem;
+    color: #666666;
+    margin: 0;
+}
+
+/* Farmstay Card Body */
+.farmstay-card-body {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.farmstay-card-title {
+    font-family: 'Merriweather', serif;
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0 0 6px 0;
+    line-height: 1.35;
+}
+
+.farmstay-card-region {
+    font-size: 0.82rem;
+    color: #2d6a4f;
+    font-weight: 700;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.farmstay-meal-highlight {
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+    padding: 8px 12px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.farmstay-amenities-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+}
+
+.farmstay-tag-pill {
+    background: #f3f4f6;
+    color: #4b5563;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 6px;
+}
+
+/* Card Price & Actions */
+.farmstay-card-footer {
+    margin-top: auto;
+    padding-top: 14px;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.farmstay-price-block {
+    display: flex;
+    flex-direction: column;
+}
+
+.farmstay-price-val {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #810000;
+    line-height: 1;
+}
+
+.farmstay-coin-val {
+    font-size: 0.78rem;
+    color: #888888;
+    font-weight: 600;
+    margin-top: 3px;
+}
+
+.farmstay-btn-group {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-details-outline {
+    background: #ffffff;
+    border: 1.5px solid #810000;
+    color: #810000;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-details-outline:hover {
+    background: #fff5f5;
+}
+
+.btn-book-primary {
+    background: linear-gradient(135deg, #810000 0%, #580000 100%);
+    border: none;
+    color: #ffffff;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 10px rgba(129, 0, 0, 0.2);
+}
+
+.btn-book-primary:hover {
+    background: linear-gradient(135deg, #a31d1d 0%, #810000 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 14px rgba(129, 0, 0, 0.3);
+}
+
+/* ==========================================================================
+   FARMSTAY DEEP-DIVE MODAL & TABS
+   ========================================================================== */
+.farm-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.farm-modal-container {
+    background: #ffffff;
+    border-radius: 24px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.farm-modal-hero {
+    position: relative;
+    height: 280px;
+    width: 100%;
+}
+
+.farm-modal-hero-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.farm-modal-hero-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+    padding: 24px 30px;
+    color: #ffffff;
+}
+
+.farm-modal-tabs-header {
+    display: flex;
+    background: #f8faf9;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 0 20px;
+    overflow-x: auto;
+}
+
+.farm-modal-tab-btn {
+    background: none;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 16px 20px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #6b7280;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.farm-modal-tab-btn:hover {
+    color: #810000;
+}
+
+.farm-modal-tab-btn.active {
+    color: #810000;
+    border-bottom-color: #810000;
+    background: #ffffff;
+}
+
+.farm-modal-tab-body {
+    padding: 28px 30px;
+}
+
+/* Rooms Grid */
+.rooms-showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 20px;
+}
+
+.room-showcase-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.2s ease;
+}
+
+.room-showcase-card:hover {
+    border-color: #810000;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+}
+
+.room-card-img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+}
+
+.room-card-content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+/* Daily Routine Timeline */
+.routine-timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.routine-timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px;
+    top: 5px;
+    bottom: 5px;
+    width: 2px;
+    background: #e5e7eb;
+}
+
+.routine-timeline-item {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.routine-timeline-dot {
+    position: absolute;
+    left: -30px;
+    top: 2px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #810000;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: bold;
+    border: 3px solid #ffffff;
+    box-shadow: 0 2px 6px rgba(129, 0, 0, 0.3);
+}
+
+.routine-time {
+    font-size: 0.8rem;
+    font-weight: 800;
+    color: #810000;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.routine-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 2px 0 4px 0;
+}
+
+.routine-desc {
+    font-size: 0.85rem;
+    color: #4b5563;
+    line-height: 1.45;
+    margin: 0;
+}
+
+/* Farm Menu Showcase */
+.farm-menu-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.farm-menu-card {
+    background: #fdfbf7;
+    border: 1px solid #f3ebd8;
+    border-radius: 14px;
+    padding: 18px;
+}
+
+.farm-menu-header {
+    font-weight: 800;
+    color: #810000;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.farm-menu-items {
+    font-size: 0.85rem;
+    color: #4b5563;
+    line-height: 1.45;
+}
+
+/* Reviews List & Submission */
+.reviews-section {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.review-item-card {
+    background: #f9fafb;
+    border: 1px solid #f0f0f0;
+    border-radius: 14px;
+    padding: 16px 20px;
+}
+
+.add-review-box {
+    background: #fff8f0;
+    border: 1.5px dashed #f59e0b;
+    border-radius: 16px;
+    padding: 20px;
+    margin-top: 10px;
+}
+
+/* ==========================================================================
+   HOTEL & LIFESTYLE BOOKING ENGINE MODAL
+   ========================================================================== */
+.booking-engine-modal {
+    max-width: 620px;
+}
+
+.booking-step-section {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 18px;
+}
+
+.booking-step-title {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #810000;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.booking-inputs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+@media (max-width: 500px) {
+    .booking-inputs-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.addon-checkbox-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addon-checkbox-row:hover {
+    border-color: #810000;
+    background: #fffafa;
+}
+
+.volunteer-discount-box {
+    background: #f0fdf4;
+    border: 1.5px solid #86efac;
+    border-radius: 12px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.price-summary-box {
+    background: #ffffff;
+    border: 2px solid #810000;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 20px;
+}
+
+.price-summary-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    color: #4b5563;
+    margin-bottom: 8px;
+}
+
+.price-summary-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: #810000;
+    border-top: 1.5px dashed #d1d5db;
+    padding-top: 10px;
+    margin-top: 8px;
+}
+
+/* ==========================================================================
+   DIGITAL FARM PASS VOUCHER (Confirmed Booking)
+   ========================================================================== */
+.digital-farm-pass {
+    background: linear-gradient(135deg, #810000 0%, #4a0000 100%);
+    border-radius: 20px;
+    color: #ffffff;
+    padding: 26px;
+    box-shadow: 0 15px 35px rgba(129, 0, 0, 0.3);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.digital-farm-pass::after {
+    content: '🌿 CONFIRMED';
+    position: absolute;
+    right: -25px;
+    top: 25px;
+    background: #2d6a4f;
+    color: white;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    padding: 6px 35px;
+    transform: rotate(45deg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pass-header {
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.25);
+    padding-bottom: 14px;
+    margin-bottom: 16px;
+}
+
+.pass-code {
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.18);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    letter-spacing: 1.5px;
+    font-weight: bold;
+}
+
+.pass-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    font-size: 0.85rem;
+    margin-bottom: 16px;
+}
+
+.pass-detail-label {
+    opacity: 0.75;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+}
+
+.pass-detail-val {
+    font-weight: 700;
 }

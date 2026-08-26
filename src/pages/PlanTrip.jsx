@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { usePageTitle, usePageStyle, useScript } from '../hooks';
+import { usePageTitle, useScript } from '../hooks';
+import './PlanTrip.css';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, setDoc, increment } from 'firebase/firestore';
@@ -14,14 +15,13 @@ const parseMarkdown = (text) => {
 
 const PlanTrip = () => {
     usePageTitle('Tamil Nadu Travel Planner AI');
-    usePageStyle('/ai api/style.css'); // Assuming style.css is in public/ai api/
     const location = useLocation();
 
     // Load libraries
     useScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js");
     useScript("https://cdn.jsdelivr.net/npm/marked/marked.min.js");
 
-    const WEATHER_KEY = import.meta.env.WEATHER_API_KEY;
+    const WEATHER_KEY = import.meta.env.VITE_WEATHER_API_KEY || "b2c5b477f503ea54bffa1455a210ff49";
 
     const [currentUser, setCurrentUser] = useState(auth.currentUser);
     const [loading, setLoading] = useState(false);
