@@ -84,7 +84,9 @@
         "select_desc": "Select a heritage site below to instantly transport yourself to ancient wonders.",
         "thanjavur_desc": "The Big Temple (Brihadisvara)",
         "mamallapuram_desc": "Shore Temple & Monuments",
-        "darasuram_desc": "Airavatesvara Temple"
+        "madurai_desc": "Meenakshi Amman Temple — 14 Gopurams & Golden Lotus Tank",
+        "darasuram_desc": "Airavatesvara Temple",
+        "chidambaram_desc": "Nataraja Temple — Temple of Cosmic Dance"
     },
     "plan_trip": {
         "title": "Tamil Nadu Travel Planner AI",

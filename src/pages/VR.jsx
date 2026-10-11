@@ -237,6 +237,81 @@ const VR = () => {
                                 </div>
                             </div>
                         </a>
+
+                        {/* Madurai Meenakshi Temple */}
+                        <a href="/VR/madurai/indexdup.html" className="place-card">
+                            <div className="card-inner">
+                                <div className="card-image">
+                                    <img src="/where-to-go/meenakshi.jpg" alt="Madurai Meenakshi Temple" loading="lazy" decoding="async" />
+                                    <div className="card-overlay">
+                                        <span className="view-btn"><i className="fas fa-vr-cardboard"></i> {t('common.enter_vr')}</span>
+                                    </div>
+                                    <div className="card-badge" style={{ backgroundColor: '#dc2626' }}>{t('common.popular')}</div>
+                                </div>
+                                <div className="card-info">
+                                    <div className="card-meta">
+                                        <span><i className="fas fa-map-marker-alt"></i> Tamil Nadu</span>
+                                        <span><i className="fas fa-star"></i> 4.9</span>
+                                    </div>
+                                    <h3>Madurai</h3>
+                                    <p className="card-detail">{t('vr.madurai_desc')}</p>
+                                    <div className="card-footer">
+                                        <span>{t('common.explore_details')}</span>
+                                        <i className="fas fa-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+
+                        {/* Chidambaram Nataraja Temple */}
+                        <a href="/VR/chidambaram/indexdup.html" className="place-card">
+                            <div className="card-inner">
+                                <div className="card-image">
+                                    <img src="/where-to-go/nataraja temple.avif" alt="Chidambaram Nataraja Temple" loading="lazy" decoding="async" />
+                                    <div className="card-overlay">
+                                        <span className="view-btn"><i className="fas fa-vr-cardboard"></i> {t('common.enter_vr')}</span>
+                                    </div>
+                                    <div className="card-badge" style={{ backgroundColor: '#4f46e5' }}>New</div>
+                                </div>
+                                <div className="card-info">
+                                    <div className="card-meta">
+                                        <span><i className="fas fa-map-marker-alt"></i> Tamil Nadu</span>
+                                        <span><i className="fas fa-star"></i> 4.8</span>
+                                    </div>
+                                    <h3>Chidambaram</h3>
+                                    <p className="card-detail">{t('vr.chidambaram_desc')}</p>
+                                    <div className="card-footer">
+                                        <span>{t('common.explore_details')}</span>
+                                        <i className="fas fa-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+
+                        {/* Darasuram Airavatesvara Temple */}
+                        <a href="/VR/darasuram/indexdup.html" className="place-card">
+                            <div className="card-inner">
+                                <div className="card-image">
+                                    <img src="/where-to-go/mounments.jpg" alt="Darasuram Airavatesvara Temple" loading="lazy" decoding="async" />
+                                    <div className="card-overlay">
+                                        <span className="view-btn"><i className="fas fa-vr-cardboard"></i> {t('common.enter_vr')}</span>
+                                    </div>
+                                    <div className="card-badge" style={{ backgroundColor: '#059669' }}>New</div>
+                                </div>
+                                <div className="card-info">
+                                    <div className="card-meta">
+                                        <span><i className="fas fa-map-marker-alt"></i> Tamil Nadu</span>
+                                        <span><i className="fas fa-star"></i> 4.8</span>
+                                    </div>
+                                    <h3>Darasuram</h3>
+                                    <p className="card-detail">{t('vr.darasuram_desc')}</p>
+                                    <div className="card-footer">
+                                        <span>{t('common.explore_details')}</span>
+                                        <i className="fas fa-chevron-right"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </main>
