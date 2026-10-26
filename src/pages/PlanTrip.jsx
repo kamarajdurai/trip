@@ -1,10 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { usePageTitle, useScript } from '../hooks';
 import './PlanTrip.css';
 import { db, auth } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, addDoc, serverTimestamp, doc, setDoc, increment } from 'firebase/firestore';
+import { 
+    detectCulturalFestivals, 
+    getTempleIntelligence, 
+    getCulinaryMatches, 
+    getAgriMatches, 
+    getMatchedGuides, 
+    buildCulturalPromptInstructions 
+} from '../data/travelIntelligence';
 
 const parseMarkdown = (text) => {
     if (typeof window !== 'undefined' && window.marked && typeof window.marked.parse === 'function') {
@@ -16,6 +24,7 @@ const parseMarkdown = (text) => {
 const PlanTrip = () => {
     usePageTitle('Tamil Nadu Travel Planner AI');
     const location = useLocation();
+    const navigate = useNavigate();
 
     // Load libraries
     useScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js");
@@ -40,6 +49,13 @@ const PlanTrip = () => {
     const [showSyncModal, setShowSyncModal] = useState(false);
     const [savedTripId, setSavedTripId] = useState(null);
 
+    // Cultural & Cross-Module Intelligence State
+    const [detectedFestivals, setDetectedFestivals] = useState([]);
+    const [templeIntel, setTempleIntel] = useState(null);
+    const [culinaryHighlight, setCulinaryHighlight] = useState(null);
+    const [agriHighlight, setAgriHighlight] = useState(null);
+    const [matchedGuides, setMatchedGuides] = useState([]);
+
     // Form State
     const [city, setCity] = useState('');
     const [startDate, setStartDate] = useState('');
@@ -61,6 +77,19 @@ const PlanTrip = () => {
     const [budget, setBudget] = useState('moderate');
     const [placeType, setPlaceType] = useState('mixed');
     const [customPrompt, setCustomPrompt] = useState('');
+
+    // Dynamically update cultural intelligence as user changes inputs
+    useEffect(() => {
+        if (city) {
+            setTempleIntel(getTempleIntelligence(city, placeType));
+            setCulinaryHighlight(getCulinaryMatches(city));
+            setAgriHighlight(getAgriMatches(city));
+            setMatchedGuides(getMatchedGuides(city));
+        }
+        if (startDate) {
+            setDetectedFestivals(detectCulturalFestivals(city, startDate, endDate));
+        }
+    }, [city, startDate, endDate, placeType]);
 
     const getDaysInRange = (start, end) => {
         const s = new Date(start),
@@ -275,42 +304,61 @@ const PlanTrip = () => {
             });
         }
 
-        // 2. Generate Plan with Gemini
+        // 2. Generate Plan with Gemini & Cultural Intelligence
         try {
-            setLoadingMsg("Drafting your professional itinerary...");
+            setLoadingMsg("Consulting Tamil Nadu cultural & climate intelligence...");
+
+            // Resolve real-time cultural & module connections
+            const activeFestivals = detectCulturalFestivals(city, startDate, endDate);
+            const activeTemple = getTempleIntelligence(city, placeType);
+            const activeCulinary = getCulinaryMatches(city);
+            const activeAgri = getAgriMatches(city);
+            const activeGuides = getMatchedGuides(city);
+
+            setDetectedFestivals(activeFestivals);
+            setTempleIntel(activeTemple);
+            setCulinaryHighlight(activeCulinary);
+            setAgriHighlight(activeAgri);
+            setMatchedGuides(activeGuides);
+
+            const culturalInstructions = buildCulturalPromptInstructions(city, startDate, endDate, placeType);
 
             const weatherSection = dailySummaries.length > 0
                 ? `**Weather Brief:**\n${dailySummaries.map(d => `Day ${d.day}: ${d.desc}, ${d.temp}°C (Humidity: ${d.humidity}%, Rain Chance: ${d.rainChance}%)`).join('; ')}`
                 : "**Weather:** Data unavailable (pack for seasonal norms).";
 
-            const prompt = `Create a short and simple ${days.length}-day Tamil Nadu travel plan for ${city} (${startDate} to ${endDate}).
+            const prompt = `Create a culturally authentic ${days.length}-day Tamil Nadu travel itinerary for ${city} (${startDate} to ${endDate}).
             
-            **Traveler Info:**
+            **Traveler Profile:**
             - Category: ${travelType}
             - Budget: ${budget}
             - Interest: ${placeType}
             
             ${weatherSection}
             
+            ${culturalInstructions}
+            
             **Guidelines:**
             - Use very simple, friendly Indian English (easy to understand).
-            - Keep it concise. No long paragraphs.
-            - Focus on the best local experiences matching the forecasted weather.
+            - Keep it concise, high-value, and culturally accurate.
+            - STRICT TEMPLE TIMING: Temples close between 12:30 PM and 4:00 PM for Uchikala Pooja. NEVER schedule temple sanctum visits during this midday slot. Schedule temple visits in the Morning (06:30 - 11:30) or Evening (16:30 - 20:30) to avoid scorching stone floors.
+            - For Midday (12:30 - 15:30), schedule an authentic regional lunch (banana leaf meals/local specialties) followed by indoor AC museums or silk/handicraft shopping.
+            - Under each day's Lunch and Dinner, explicitly name authentic native food specialties.
 
             **Format:**
             ## Quick Summary
-            (2-3 lines about the trip)
+            (2-3 lines about the journey, key highlights, and cultural essence)
 
             ## Daily Plan
-            (For each day, use ## Day X header)
-            - **Morning**: [Top 1-2 activities]
-            - **Lunch**: [1 suggestion]
-            - **Afternoon**: [1-2 activities]
-            - **Evening**: [Best spot for dinner/relaxing]
+            (For each day, strictly use ## Day X header)
+            - **Morning (06:30 - 11:30)**: [1-2 activities; temples before heat or plantation walk]
+            - **Lunch & Midday Pause (12:30 - 15:30)**: [Iconic native dishes + indoor museum/cultural shopping]
+            - **Afternoon & Evening (16:00 - 20:30)**: [Temple deeparadhana, scenic viewpoints, or vibrant evening street food]
+            - **Cultural & Attire Note**: [Dress code recommendations or mobile locker tips]
 
             ## Logistics & Packing Essentials
             - Best way to travel between spots.
-            - 2-3 essential items for the weather.
+            - 2-3 essential items (e.g. traditional attire for temples, thick socks for sunny stone floors, weather gear).
 
             **CRITICAL:** Ensure every section (Summary, Day X, Logistics) starts with a ## header.
             `;
@@ -334,9 +382,11 @@ const PlanTrip = () => {
         if (!rawMarkdown) return;
 
         setLoading(true);
-        setLoadingMsg(`Replanning Day ${selectedDayToReplan}...`);
+        setLoadingMsg(`Replanning Day ${selectedDayToReplan} with Cultural Intelligence...`);
 
         try {
+            const culturalInstructions = buildCulturalPromptInstructions(city, startDate, endDate, placeType);
+
             const prompt = `I have this travel itinerary for ${city}:
             
             ${rawMarkdown}
@@ -347,15 +397,18 @@ const PlanTrip = () => {
             **Specific Feedback:**
             ${replanFeedback || "Suggest entirely new local experiences, hidden gems, or different spots than the ones currently listed."}
             
+            ${culturalInstructions}
+
             **Format to return (START DIRECTLY WITH THE HEADER):**
             ## Day ${selectedDayToReplan}
-            - **Morning**: [NEW activity 1-2]
-            - **Lunch**: [NEW suggest 1]
-            - **Afternoon**: [NEW activity 1-2]
-            - **Evening**: [NEW best spot]
+            - **Morning (06:30 - 11:30)**: [NEW activity 1-2]
+            - **Lunch & Midday Pause (12:30 - 15:30)**: [NEW authentic food suggestion & indoor craft/museum during temple closure]
+            - **Afternoon & Evening (16:00 - 20:30)**: [NEW evening spot or temple deeparadhana]
+            - **Cultural & Attire Note**: [Dress code or local tips]
             
             **CRITICAL:**
             - Return ONLY the updated markdown for Day ${selectedDayToReplan}.
+            - STRICTLY respect temple midday closure (12:30 - 4:00 PM).
             - DO NOT return the full itinerary.
             - Ensure the activities are DIFFERENT from what is currently in Day ${selectedDayToReplan}.
             - Use the same simple, friendly Indian English style.
@@ -923,7 +976,221 @@ ${rawMarkdown}
                                         </div>
                                     </div>
                                 )}
-                                {outputHtml && <div dangerouslySetInnerHTML={{ __html: outputHtml }}></div>}
+                                {detectedFestivals && detectedFestivals.length > 0 && (
+                                    <div className="festival-advisory-banner">
+                                        <div className="festival-banner-icon">
+                                            <i className="fa-solid fa-fire-flame-curved"></i>
+                                        </div>
+                                        <div className="festival-banner-content">
+                                            <div className="festival-banner-badge">
+                                                <span><i className="fa-solid fa-bell"></i> Cultural Festival Alert</span>
+                                                <span className="festival-tamil-month">{detectedFestivals[0].tamilMonth}</span>
+                                            </div>
+                                            <h4>{detectedFestivals[0].title}</h4>
+                                            <p>{detectedFestivals[0].longDesc || detectedFestivals[0].desc}</p>
+                                            <div className="festival-advisory-note">
+                                                <i className="fa-solid fa-circle-exclamation"></i>
+                                                <span><strong>Pilgrim & Traffic Advisory:</strong> Expect higher devotee footfall, colorful temple chariot processions, and special poojas. Consider booking temple darshan passes or verified local guides in advance.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {templeIntel && (
+                                    <div className="temple-protocol-card">
+                                        <div className="temple-card-header">
+                                            <div className="temple-header-title">
+                                                <i className="fa-solid fa-gopuram temple-icon"></i>
+                                                <div>
+                                                    <h4>{templeIntel.name} — Agamic Darshan & Etiquette Protocol</h4>
+                                                    <span className="temple-subtitle">Heritage guidelines to ensure a smooth, respectful pilgrimage</span>
+                                                </div>
+                                            </div>
+                                            <span className="temple-status-badge">
+                                                <i className="fa-solid fa-shield-halved"></i> Cultural Etiquette Active
+                                            </span>
+                                        </div>
+
+                                        <div className="temple-protocol-grid">
+                                            <div className="protocol-item">
+                                                <div className="protocol-icon-wrap timing">
+                                                    <i className="fa-solid fa-clock"></i>
+                                                </div>
+                                                <div className="protocol-text">
+                                                    <strong>Optimal Darshan Timings</strong>
+                                                    <p>{templeIntel.darshanTimings}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="protocol-item highlight-alert">
+                                                <div className="protocol-icon-wrap pause">
+                                                    <i className="fa-solid fa-door-closed"></i>
+                                                </div>
+                                                <div className="protocol-text">
+                                                    <strong>Midday Agamic Pause (12:30 – 4 PM)</strong>
+                                                    <p>{templeIntel.middayRule}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="protocol-item">
+                                                <div className="protocol-icon-wrap dress">
+                                                    <i className="fa-solid fa-vest"></i>
+                                                </div>
+                                                <div className="protocol-text">
+                                                    <strong>Mandatory Dress Code</strong>
+                                                    <p>{templeIntel.dressCode}</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="protocol-item">
+                                                <div className="protocol-icon-wrap mobile">
+                                                    <i className="fa-solid fa-mobile-screen-button"></i>
+                                                </div>
+                                                <div className="protocol-text">
+                                                    <strong>Footwear & Electronics</strong>
+                                                    <p>{templeIntel.electronicsPolicy} {templeIntel.footwearTips}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {templeIntel.insiderTip && (
+                                            <div className="temple-insider-tip">
+                                                <i className="fa-solid fa-lightbulb"></i>
+                                                <span><strong>Insider Tip:</strong> {templeIntel.insiderTip}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {outputHtml && (
+                                    <div className="itinerary-content-card">
+                                        <div dangerouslySetInnerHTML={{ __html: outputHtml }}></div>
+                                    </div>
+                                )}
+
+                                {outputHtml && (
+                                    <div className="ecosystem-modules-section">
+                                        <div className="ecosystem-section-header">
+                                            <div className="ecosystem-title-wrap">
+                                                <span className="ecosystem-pill"><i className="fa-solid fa-compass"></i> Connected Modules</span>
+                                                <h3>Deepen Your Tamil Nadu Journey</h3>
+                                            </div>
+                                            <span className="ecosystem-count">Cultural & Experience Hub</span>
+                                        </div>
+
+                                        <div className="ecosystem-cards-grid">
+                                            {/* Culinary Card */}
+                                            {culinaryHighlight && (
+                                                <div className="ecosystem-card culinary-card">
+                                                    <div className="eco-card-top">
+                                                        <div className="eco-badge culinary"><i className="fa-solid fa-utensils"></i> Flavors of TN</div>
+                                                        <span className="eco-region-tag">{culinaryHighlight.region}</span>
+                                                    </div>
+                                                    <h4>{culinaryHighlight.title}</h4>
+                                                    <p className="eco-tagline">{culinaryHighlight.tagline}</p>
+                                                    <div className="eco-chips-list">
+                                                        {culinaryHighlight.specialties.map((item, i) => (
+                                                            <span key={i} className="eco-chip"><i className="fa-solid fa-bowl-food"></i> {item}</span>
+                                                        ))}
+                                                    </div>
+                                                    <div className="eco-famous-spots">
+                                                        <i className="fa-solid fa-location-arrow"></i> Iconic: {culinaryHighlight.famousSpots.slice(0, 2).join(', ')}
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => navigate(culinaryHighlight.link)}
+                                                        className="eco-action-btn culinary-btn"
+                                                    >
+                                                        <span>Explore Culinary Guide</span>
+                                                        <i className="fa-solid fa-arrow-right"></i>
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Agri Card */}
+                                            {agriHighlight ? (
+                                                <div className="ecosystem-card agri-card">
+                                                    <div className="eco-card-top">
+                                                        <div className="eco-badge agri"><i className="fa-solid fa-leaf"></i> Agri & Village Tourism</div>
+                                                        <span className="eco-region-tag">{agriHighlight.location}</span>
+                                                    </div>
+                                                    <h4>{agriHighlight.title}</h4>
+                                                    <p className="eco-tagline">Season: {agriHighlight.season} • Stay: {agriHighlight.stayType}</p>
+                                                    <div className="eco-chips-list">
+                                                        {agriHighlight.activities.map((act, i) => (
+                                                            <span key={i} className="eco-chip"><i className="fa-solid fa-seedling"></i> {act}</span>
+                                                        ))}
+                                                    </div>
+                                                    <div className="eco-famous-spots">
+                                                        <i className="fa-solid fa-house-chimney"></i> Verified rural farmstays & plantation trails
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => navigate(agriHighlight.link)}
+                                                        className="eco-action-btn agri-btn"
+                                                    >
+                                                        <span>Explore Agri Experiences</span>
+                                                        <i className="fa-solid fa-arrow-right"></i>
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="ecosystem-card agri-card">
+                                                    <div className="eco-card-top">
+                                                        <div className="eco-badge agri"><i className="fa-solid fa-leaf"></i> Rural & Agri Tourism</div>
+                                                        <span className="eco-region-tag">Tamil Nadu Farms</span>
+                                                    </div>
+                                                    <h4>Explore Authentic Village Life</h4>
+                                                    <p className="eco-tagline">Tender coconut groves, organic hill tea, and pottery workshops.</p>
+                                                    <div className="eco-chips-list">
+                                                        <span className="eco-chip"><i className="fa-solid fa-seedling"></i> Nilgiris Tea Tasting</span>
+                                                        <span className="eco-chip"><i className="fa-solid fa-seedling"></i> Pollachi Coconut Groves</span>
+                                                    </div>
+                                                    <div className="eco-famous-spots">
+                                                        <i className="fa-solid fa-house-chimney"></i> Farm-to-table dining & peaceful village retreats
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => navigate('/agri')}
+                                                        className="eco-action-btn agri-btn"
+                                                    >
+                                                        <span>Explore Agri Hub</span>
+                                                        <i className="fa-solid fa-arrow-right"></i>
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Verified Local Guides Card */}
+                                            <div className="ecosystem-card guides-card">
+                                                <div className="eco-card-top">
+                                                    <div className="eco-badge guide"><i className="fa-solid fa-user-shield"></i> Local Guides Match</div>
+                                                    <span className="eco-region-tag">{matchedGuides.length} Verified</span>
+                                                </div>
+                                                <h4>Certified Tour Guides</h4>
+                                                <p className="eco-tagline">Deep temple epigraphy, architectural secrets, and crowd navigation.</p>
+                                                
+                                                <div className="matched-guides-list">
+                                                    {matchedGuides.slice(0, 2).map((g) => (
+                                                        <div key={g.id} className="mini-guide-pill" onClick={() => navigate(`/guide/${g.id}`)}>
+                                                            <img src={g.image} alt={g.name} className="mini-guide-avatar" />
+                                                            <div className="mini-guide-info">
+                                                                <div className="mini-guide-name-row">
+                                                                    <strong>{g.name}</strong>
+                                                                    <span className="mini-guide-rating"><i className="fa-solid fa-star"></i> {g.rating}</span>
+                                                                </div>
+                                                                <span className="mini-guide-sub">{g.specialty} • {g.price}</span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+
+                                                <button 
+                                                    onClick={() => navigate('/guide')}
+                                                    className="eco-action-btn guide-btn"
+                                                >
+                                                    <span>Browse & Book Guides</span>
+                                                    <i className="fa-solid fa-arrow-right"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div className="placeholder-state"></div>
