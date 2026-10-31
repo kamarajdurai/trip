@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import '../assets/css/style.css';
 import { usePageTitle } from '../hooks';
 import Navbar from '../components/Navbar';
+import OpeningAnimation from '../components/OpeningAnimation';
 
 class HomeParticle {
     constructor(width, height) {
@@ -176,6 +177,9 @@ const Home = () => {
 
     return (
         <div className="home-container">
+            {/* Cinematic Website Opening Video Animation (Plays on new visit or page refresh) */}
+            <OpeningAnimation />
+
             <Navbar />
 
             {/* Hero Section — Stitch Cinematic Style */}

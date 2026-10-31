@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { usePageTitle, useScript } from '../hooks';
 import './PlanTrip.css';
@@ -26,6 +26,9 @@ const PlanTrip = () => {
     const location = useLocation();
     const navigate = useNavigate();
 
+    const startDateRef = useRef(null);
+    const endDateRef = useRef(null);
+
     // Load libraries
     useScript("https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js");
     useScript("https://cdn.jsdelivr.net/npm/marked/marked.min.js");
@@ -43,7 +46,6 @@ const PlanTrip = () => {
     const [selectedDayToReplan, setSelectedDayToReplan] = useState('1');
     const [replanFeedback, setReplanFeedback] = useState('');
     const [isExporting, setIsExporting] = useState(false);
-    const [isSaving, setIsSaving] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
     const [calendarEvents, setCalendarEvents] = useState([]);
     const [showSyncModal, setShowSyncModal] = useState(false);
@@ -56,9 +58,15 @@ const PlanTrip = () => {
     const [agriHighlight, setAgriHighlight] = useState(null);
     const [matchedGuides, setMatchedGuides] = useState([]);
 
-    // Form State
+    // Form State (Default values aligned with screenshots)
     const [city, setCity] = useState('');
     const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [travelType, setTravelType] = useState('family'); // Screenshot shows 'Family' active
+    const [budget, setBudget] = useState('moderate');       // Screenshot shows '$$ Standard' active
+    const [placeType, setPlaceType] = useState('mixed');    // Screenshot shows '★ Mixed' active
+    const [customPrompt, setCustomPrompt] = useState('');
+    const [showCustomPrompt, setShowCustomPrompt] = useState(false);
 
     useEffect(() => {
         const unsub = onAuthStateChanged(auth, (user) => {
@@ -72,11 +80,6 @@ const PlanTrip = () => {
             setCity(location.state.destination);
         }
     }, [location.state]);
-    const [endDate, setEndDate] = useState('');
-    const [travelType, setTravelType] = useState('family');
-    const [budget, setBudget] = useState('moderate');
-    const [placeType, setPlaceType] = useState('mixed');
-    const [customPrompt, setCustomPrompt] = useState('');
 
     // Dynamically update cultural intelligence as user changes inputs
     useEffect(() => {
@@ -99,15 +102,13 @@ const PlanTrip = () => {
         return days;
     };
 
-    const getWeatherIcon = (desc) => {
-        const d = desc.toLowerCase();
-        if (d.includes('clear')) return 'fa-sun';
-        if (d.includes('cloud')) return 'fa-cloud';
-        if (d.includes('rain')) return 'fa-cloud-rain';
-        if (d.includes('snow')) return 'fa-snowflake';
-        if (d.includes('thunder')) return 'fa-bolt';
-        if (d.includes('mist') || d.includes('fog')) return 'fa-smog';
-        return 'fa-cloud-sun';
+    const formatDisplayDate = (dateStr) => {
+        if (!dateStr) return 'dd-mm-yyyy';
+        const parts = dateStr.split('-');
+        if (parts.length === 3) {
+            return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        }
+        return dateStr;
     };
 
     const sendToGemini = async (prompt) => {
@@ -128,13 +129,12 @@ const PlanTrip = () => {
             await saveOrUpdateTrip(data.text, htmlContent);
         } catch (e) {
             setOutputHtml(
-                `<div class="placeholder-state" style="color:red">${e.message}</div>`
+                `<div style="color:#b91c1c; padding: 20px; font-weight:600;">${e.message}</div>`
             );
         } finally {
             setLoading(false);
         }
     };
-
 
     const getRealisticWeatherForDay = (city, dateObj, dayIdx, forecastItem, citySunrise) => {
         const cityNameLower = (city || '').toLowerCase();
@@ -152,7 +152,6 @@ const PlanTrip = () => {
             main = forecastItem.weather[0].main;
             desc = forecastItem.weather[0].description;
         } else {
-            // Realistic regional fallback
             if (isHillStation) {
                 temp = 16 + (dayIdx % 4);
                 feelsLike = temp - 1;
@@ -180,18 +179,16 @@ const PlanTrip = () => {
             }
         }
 
-        // Capitalize description
         const formattedDesc = desc
             .split(' ')
             .map(w => w.charAt(0).toUpperCase() + w.slice(1))
             .join(' ');
 
-        // Determine type & dynamic realistic backgrounds
-        const dLower = desc.toLowerCase();
         let weatherType = 'sunny';
         let bgImage = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=800&auto=format&fit=crop';
         let weatherTip = 'Great day for exploring outdoor sights! Stay hydrated and wear comfortable walking shoes.';
 
+        const dLower = desc.toLowerCase();
         if (dLower.includes('rain') || dLower.includes('drizzle') || dLower.includes('shower') || main === 'Rain') {
             weatherType = 'rain';
             bgImage = 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?q=80&w=800&auto=format&fit=crop';
@@ -211,7 +208,6 @@ const PlanTrip = () => {
         }
 
         sunrise = citySunrise || '6:14 AM';
-
         const relativeDay = dayIdx === 0
             ? 'Today'
             : dayIdx === 1
@@ -236,25 +232,25 @@ const PlanTrip = () => {
     };
 
     const generatePlan = async () => {
-        setOutputHtml(null); // Clear previous output
+        setOutputHtml(null);
         setWeatherData(null);
         setIsSaved(false);
         setSavedTripId(null);
 
         if (!customPrompt) {
             if (!city) {
-                setOutputHtml(`<div class="placeholder-state" style="color: var(--danger-color);"><i class="fa-solid fa-circle-exclamation"></i><p>Please enter a destination city.</p></div>`);
+                alert("Please enter a destination city.");
                 return;
             }
             if (!startDate || !endDate) {
-                setOutputHtml(`<div class="placeholder-state" style="color: var(--danger-color);"><i class="fa-solid fa-calendar-xmark"></i><p>Please select valid start and end dates.</p></div>`);
+                alert("Please select valid start and end dates.");
                 return;
             }
         }
 
         setShowDownload(false);
         setLoading(true);
-        setLoadingMsg("Fetching weather data...");
+        setLoadingMsg("Consulting Tamil Nadu cultural & climate intelligence...");
 
         if (customPrompt) {
             await sendToGemini(customPrompt);
@@ -266,19 +262,18 @@ const PlanTrip = () => {
         const days = getDaysInRange(startDate, endDate);
         let citySunrise = '6:14 AM';
 
-        // 1. Try to fetch weather
         try {
-            setLoadingMsg("Checking forecast...");
+            setLoadingMsg("Checking live weather forecast...");
             const weatherRes = await fetch(`https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${WEATHER_KEY}&units=metric`);
-            const weatherData = await weatherRes.json();
+            const data = await weatherRes.json();
 
-            if (weatherData.cod === "200") {
-                if (weatherData.city?.sunrise) {
-                    citySunrise = new Date(weatherData.city.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            if (data.cod === "200") {
+                if (data.city?.sunrise) {
+                    citySunrise = new Date(data.city.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
                 }
 
                 const forecastMap = new Map();
-                weatherData.list.forEach(e => {
+                data.list.forEach(e => {
                     const date = e.dt_txt.split(" ")[0];
                     if (!forecastMap.has(date)) forecastMap.set(date, e);
                 });
@@ -290,7 +285,6 @@ const PlanTrip = () => {
                     dailySummaries.push(dayWeather);
                 });
             } else {
-                console.warn("Weather API Error (using regional realistic climate models):", weatherData.message);
                 days.forEach((d, i) => {
                     const dayWeather = getRealisticWeatherForDay(city, d, i, null, citySunrise);
                     dailySummaries.push(dayWeather);
@@ -304,11 +298,9 @@ const PlanTrip = () => {
             });
         }
 
-        // 2. Generate Plan with Gemini & Cultural Intelligence
         try {
-            setLoadingMsg("Consulting Tamil Nadu cultural & climate intelligence...");
+            setLoadingMsg("Designing your personalized day-by-day itinerary...");
 
-            // Resolve real-time cultural & module connections
             const activeFestivals = detectCulturalFestivals(city, startDate, endDate);
             const activeTemple = getTempleIntelligence(city, placeType);
             const activeCulinary = getCulinaryMatches(city);
@@ -322,7 +314,6 @@ const PlanTrip = () => {
             setMatchedGuides(activeGuides);
 
             const culturalInstructions = buildCulturalPromptInstructions(city, startDate, endDate, placeType);
-
             const weatherSection = dailySummaries.length > 0
                 ? `**Weather Brief:**\n${dailySummaries.map(d => `Day ${d.day}: ${d.desc}, ${d.temp}°C (Humidity: ${d.humidity}%, Rain Chance: ${d.rainChance}%)`).join('; ')}`
                 : "**Weather:** Data unavailable (pack for seasonal norms).";
@@ -341,8 +332,8 @@ const PlanTrip = () => {
             **Guidelines:**
             - Use very simple, friendly Indian English (easy to understand).
             - Keep it concise, high-value, and culturally accurate.
-            - STRICT TEMPLE TIMING: Temples close between 12:30 PM and 4:00 PM for Uchikala Pooja. NEVER schedule temple sanctum visits during this midday slot. Schedule temple visits in the Morning (06:30 - 11:30) or Evening (16:30 - 20:30) to avoid scorching stone floors.
-            - For Midday (12:30 - 15:30), schedule an authentic regional lunch (banana leaf meals/local specialties) followed by indoor AC museums or silk/handicraft shopping.
+            - STRICT TEMPLE TIMING: Temples close between 12:30 PM and 4:00 PM for Uchikala Pooja. Schedule temple visits in the Morning (06:30 - 11:30) or Evening (16:30 - 20:30) to avoid scorching stone floors.
+            - For Midday (12:30 - 15:30), schedule authentic regional food (banana leaf meals/local specialties) followed by indoor AC museums or silk/handicraft shopping.
             - Under each day's Lunch and Dinner, explicitly name authentic native food specialties.
 
             **Format:**
@@ -369,36 +360,32 @@ const PlanTrip = () => {
             }
 
             await sendToGemini(prompt);
-
         } catch (err) {
-            console.error(err);
-            setOutputHtml(`<div class="placeholder-state" style="color: var(--danger-color);"><i class="fa-solid fa-server"></i><p>Critical Error: ${err.message}</p></div>`);
-        } finally {
+            console.error("Plan Generation Error:", err);
+            setOutputHtml(`<div style="color:red; padding: 20px;">${err.message}</div>`);
             setLoading(false);
         }
     };
 
     const replanDay = async () => {
-        if (!rawMarkdown) return;
+        if (!selectedDayToReplan) {
+            alert("Please select a day to replan.");
+            return;
+        }
 
         setLoading(true);
-        setLoadingMsg(`Replanning Day ${selectedDayToReplan} with Cultural Intelligence...`);
+        setLoadingMsg(`Replanning Day ${selectedDayToReplan}...`);
 
         try {
-            const culturalInstructions = buildCulturalPromptInstructions(city, startDate, endDate, placeType);
-
-            const prompt = `I have this travel itinerary for ${city}:
+            const prompt = `You are a Tamil Nadu travel expert assistant.
+            The user wants to REPLAN Day ${selectedDayToReplan} of their itinerary for ${city}.
             
+            **Current Full Itinerary (Markdown):**
             ${rawMarkdown}
             
-            **OBJECTIVE:**
-            Please provide DIFFERENT activities for **Day ${selectedDayToReplan}**. 
+            **User's feedback / request for Day ${selectedDayToReplan}:**
+            "${replanFeedback || 'Please provide fresh alternative spots and activities for this day.'}"
             
-            **Specific Feedback:**
-            ${replanFeedback || "Suggest entirely new local experiences, hidden gems, or different spots than the ones currently listed."}
-            
-            ${culturalInstructions}
-
             **Format to return (START DIRECTLY WITH THE HEADER):**
             ## Day ${selectedDayToReplan}
             - **Morning (06:30 - 11:30)**: [NEW activity 1-2]
@@ -411,7 +398,6 @@ const PlanTrip = () => {
             - STRICTLY respect temple midday closure (12:30 - 4:00 PM).
             - DO NOT return the full itinerary.
             - Ensure the activities are DIFFERENT from what is currently in Day ${selectedDayToReplan}.
-            - Use the same simple, friendly Indian English style.
             `;
 
             const res = await fetch("/api/gemini", {
@@ -424,23 +410,17 @@ const PlanTrip = () => {
             if (!res.ok) throw new Error(data.error || "Gemini error");
 
             let newDayContent = data.text.trim();
-            // Remove markdown code block markers if Gemini included them
             newDayContent = newDayContent.replace(/^```markdown\n|```$/g, '').trim();
 
-            // Surgical Swap logic using Regex
             const currentContent = rawMarkdown;
             const dayNum = selectedDayToReplan;
-
-            // Look for ## Day {dayNum} followed by any content until we hit the next ## header OR the end of the string
             const dayRegex = new RegExp(`## Day ${dayNum}[\\s\\S]*?(?=(##|$))`, 'i');
 
             if (!dayRegex.test(currentContent)) {
-                console.error("Content before regex fail:", currentContent);
-                throw new Error(`Could not find the section for Day ${dayNum}. Please try generating a new plan.`);
+                throw new Error(`Could not find the section for Day ${dayNum}.`);
             }
 
             const updatedMarkdown = currentContent.replace(dayRegex, newDayContent + "\n\n");
-
             setRawMarkdown(updatedMarkdown);
             const newHtml = parseMarkdown(updatedMarkdown);
             setOutputHtml(newHtml);
@@ -456,28 +436,23 @@ const PlanTrip = () => {
     };
 
     const downloadPDF = () => {
-        const element = document.getElementById("output");
+        const element = document.getElementById("itineraryOutputTarget");
+        if (!element) return;
         const cityName = city || "Itinerary";
 
-        // Clone to styling for PDF (Light Mode)
         const clone = element.cloneNode(true);
         clone.style.background = "white";
         clone.style.color = "black";
         clone.style.padding = "40px";
-        clone.style.width = "800px"; // Fixed width for A4 consistency
+        clone.style.width = "800px";
         clone.style.border = "none";
 
-        // Fix Headers for PDF
         const headers = clone.querySelectorAll('h1, h2, h3, strong');
-        headers.forEach(h => h.style.color = "#0f172a");
-
-        // Fix Links
-        const links = clone.querySelectorAll('a');
-        links.forEach(l => l.style.color = "#2563eb");
+        headers.forEach(h => h.style.color = "#1b4332");
 
         const opt = {
             margin: [10, 10],
-            filename: `${cityName}_Travel_Plan.pdf`,
+            filename: `${cityName}_Tamil_Nadu_Travel_Plan.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: { scale: 2, useCORS: true },
             // eslint-disable-next-line no-undef
@@ -485,21 +460,25 @@ const PlanTrip = () => {
         };
 
         // eslint-disable-next-line no-undef
-        html2pdf().from(clone).set(opt).save();
+        if (typeof html2pdf !== 'undefined') {
+            // eslint-disable-next-line no-undef
+            html2pdf().from(clone).set(opt).save();
+        } else {
+            window.print();
+        }
     };
 
     const createGoogleCalendarUrl = (event) => {
         const start = event.start.dateTime.replace(/[-:]/g, '');
         const end = event.end.dateTime.replace(/[-:]/g, '');
         const details = encodeURIComponent(event.description || '');
-        const location = encodeURIComponent(event.location || '');
+        const locationStr = encodeURIComponent(event.location || '');
         const summary = encodeURIComponent(event.summary || '');
 
-        return `https://www.google.com/calendar/render?action=TEMPLATE&text=${summary}&dates=${start}/${end}&details=${details}&location=${location}&trp=true`;
+        return `https://www.google.com/calendar/render?action=TEMPLATE&text=${summary}&dates=${start}/${end}&details=${details}&location=${locationStr}&trp=true`;
     };
 
     const generateCalendarEvents = async () => {
-        console.log("!!! TRIGGERING GOOGLE CALENDAR SYNC MODAL !!!");
         if (!rawMarkdown) return;
         setIsExporting(true);
         setLoading(true);
@@ -507,39 +486,28 @@ const PlanTrip = () => {
 
         try {
             const prompt = `You are a travel automation agent.
-
-I will give you a travel itinerary in markdown format.
-Your task is to convert it into a list of events.
-
-### INPUTS
-- City: ${city}
-- Trip start date: ${startDate}
-- Trip end date: ${endDate}
-- Itinerary markdown:
-${rawMarkdown}
-
-### RULES
-1. Create events ONLY for: Morning, Lunch, Afternoon, Evening.
-2. Use realistic Indian travel times:
-   - Morning: 09:00 – 11:30
-   - Lunch: 13:00 – 14:00
-   - Afternoon: 15:00 – 17:30
-   - Evening: 18:30 – 20:30
-3. Each event MUST include: summary, location, start.dateTime (YYYY-MM-DDTHH:mm:ss), end.dateTime (YYYY-MM-DDTHH:mm:ss), and description.
-4. Output ONLY valid JSON:
-{
-  "events": [
-    {
-      "summary": "Meenakshi Temple Visit",
-      "location": "Madurai",
-      "description": "Explore the historic temple",
-      "start": { "dateTime": "2026-01-10T09:00:00" },
-      "end": { "dateTime": "2026-01-10T11:30:00" },
-      "day": 1
-    }
-  ]
-}
-`;
+            Convert this markdown travel itinerary into an events schedule.
+            
+            - City: ${city}
+            - Trip start date: ${startDate}
+            - Trip end date: ${endDate}
+            - Itinerary:
+            ${rawMarkdown}
+            
+            Create events for Morning, Lunch, Afternoon, Evening with realistic times.
+            Output ONLY valid JSON:
+            {
+              "events": [
+                {
+                  "summary": "Meenakshi Temple Visit",
+                  "location": "Madurai",
+                  "description": "Explore the historic temple",
+                  "start": { "dateTime": "2026-01-10T09:00:00" },
+                  "end": { "dateTime": "2026-01-10T11:30:00" },
+                  "day": 1
+                }
+              ]
+            }`;
 
             const res = await fetch("/api/gemini", {
                 method: "POST",
@@ -550,10 +518,7 @@ ${rawMarkdown}
             const data = await res.json();
             if (!res.ok) throw new Error(data.error || "Gemini error");
 
-            console.log("RAW AI RESPONSE FOR CALENDAR:", data.text);
-
             let jsonText = data.text.trim();
-            // Robust extraction: find content between first { and last }
             const firstBrace = jsonText.indexOf('{');
             const lastBrace = jsonText.lastIndexOf('}');
 
@@ -561,18 +526,12 @@ ${rawMarkdown}
                 jsonText = jsonText.substring(firstBrace, lastBrace + 1);
             }
 
-            try {
-                const parsed = JSON.parse(jsonText);
-                if (parsed.events && parsed.events.length > 0) {
-                    setCalendarEvents(parsed.events);
-                    setShowSyncModal(true);
-                } else {
-                    console.error("No events in parsed JSON:", parsed);
-                    throw new Error("No events found in the itinerary.");
-                }
-            } catch {
-                console.error("JSON Parse Error. Cleaned text:", jsonText);
-                throw new Error("Could not understand the calendar data format from AI.");
+            const parsed = JSON.parse(jsonText);
+            if (parsed.events && parsed.events.length > 0) {
+                setCalendarEvents(parsed.events);
+                setShowSyncModal(true);
+            } else {
+                throw new Error("No events found in the itinerary.");
             }
         } catch (err) {
             console.error("CALENDAR GENERATION FAILED:", err);
@@ -585,10 +544,7 @@ ${rawMarkdown}
 
     const saveOrUpdateTrip = async (markdownText, htmlContent) => {
         const user = currentUser || auth.currentUser;
-        if (!user) {
-            console.warn("No user logged in - skipping trip auto-save");
-            return;
-        }
+        if (!user) return;
 
         try {
             let budgetVal = 15000;
@@ -596,22 +552,6 @@ ${rawMarkdown}
             else if (budget === 'luxury') budgetVal = 50000;
 
             const duration = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24)) || 1;
-
-            const getDestinationImage = (dest) => {
-                const search = dest?.toLowerCase() || '';
-                if (search.includes('chennai') || search.includes('marina')) return '/where-to-go/marina.jpg';
-                if (search.includes('madurai') || search.includes('meenakshi')) return '/where-to-go/meenakshi.jpg';
-                if (search.includes('thanjavur') || search.includes('temple')) return '/where-to-go/big_temple.jpg';
-                if (search.includes('ooty') || search.includes('nilgiri')) return '/where-to-go/ooty.jpg';
-                if (search.includes('kodaikanal') || search.includes('kodai')) return '/where-to-go/kodaikanal.jpg';
-                if (search.includes('kanyakumari')) return '/where-to-go/kanyakumari-beaches-1-1661159465-lb.jpg';
-                if (search.includes('rameshwaram') || search.includes('dhanushkodi')) return '/where-to-go/rameshawaram.jpg';
-                if (search.includes('mahabalipuram') || search.includes('mamallapuram')) return '/where-to-go/mahabalipuram.jpg';
-                if (search.includes('coimbatore') || search.includes('pollachi') || search.includes('valparai')) return '/where-to-go/valparai.jpg';
-                if (search.includes('yercaud') || search.includes('salem')) return '/where-to-go/yercaud.jpg';
-                if (search.includes('chola') || search.includes('gangai')) return '/where-to-go/gangai_vr.jpg';
-                return 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?auto=format&fit=crop&w=1000&q=80';
-            };
 
             const tripData = {
                 title: `AI Trip to ${city || 'Destination'}`,
@@ -629,7 +569,7 @@ ${rawMarkdown}
                 memories: markdownText || '',
                 itineraryHtml: htmlContent || '',
                 isAiGenerated: true,
-                coverImage: getDestinationImage(city),
+                coverImage: '/where-to-go/meenakshi.jpg',
                 userId: user.uid,
                 duration: duration > 0 ? duration : 1,
                 updatedAt: serverTimestamp()
@@ -638,617 +578,568 @@ ${rawMarkdown}
             const walletRef = doc(db, 'users', user.uid, 'wallet', 'summary');
 
             if (savedTripId) {
-                // Update existing trip in Firestore
                 await setDoc(doc(db, 'users', user.uid, 'trips', savedTripId), tripData, { merge: true });
-                console.log("Trip updated in history:", savedTripId);
             } else {
-                // Save new trip
                 tripData.createdAt = serverTimestamp();
                 const docRef = await addDoc(collection(db, 'users', user.uid, 'trips'), tripData);
                 setSavedTripId(docRef.id);
                 setIsSaved(true);
 
-                // Update user wallet summary
                 await setDoc(walletRef, {
                     totalTrips: increment(1),
                     totalBudget: increment(budgetVal),
                     totalSpent: increment(0),
                     ecopoints: increment(50)
                 }, { merge: true });
-                console.log("Trip saved to history:", docRef.id);
             }
         } catch (err) {
             console.error("Error auto-saving trip:", err);
         }
     };
 
-    const copyToClipboard = (text) => {
-        navigator.clipboard.writeText(text).then(() => {
-            alert("JSON copied to clipboard!");
-        });
-    };
-
     return (
         <div className="app-container">
-            <aside className="sidebar">
-                <div className="brand" onClick={() => window.location.href = '/home'}>
-                    <i className="fa-solid fa-location-dot"></i>
-                    <h1>TN.AI Planner</h1>
-                    <div className="logo-bar"></div>
+            {/* ── Mobile Top Header (Visible only on mobile screens < 900px) ── */}
+            <header className="mob-header-bar">
+                <div className="mob-brand-text">
+                    <span className="mob-brand-title">Tamil Nadu</span>
+                    <span className="mob-brand-sub">Tourism</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', marginTop: '-14px' }}>
-                    <button
-                        onClick={() => window.location.href = '/home'}
-                        style={{
-                            background: 'none',
-                            border: 'none',
-                            color: 'var(--text-secondary)',
-                            fontSize: '0.75rem',
-                            fontFamily: 'var(--font-display)',
-                            fontWeight: 600,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '5px',
-                            padding: '4px 0',
-                            letterSpacing: '0.02em',
-                            transition: 'color 0.2s'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.color = 'var(--brand-coral)'}
-                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}
-                    >
-                        <i className="fa-solid fa-chevron-left" style={{ fontSize: '0.65rem' }}></i> Back to Home
-                    </button>
+                <img 
+                    src="/mob_header_gopuram.png" 
+                    alt="Tamil Nadu Gopuram" 
+                    className="mob-header-graphic" 
+                />
+            </header>
+
+            {/* ── Left Sidebar / Form Card ── */}
+            <aside className="sidebar-card">
+                {/* Card Header: Compass badge + Titles */}
+                <div className="card-header-row">
+                    <div className="compass-badge">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="12" cy="12" r="10" stroke="#ffffff" strokeWidth="2" fill="none"/>
+                            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="#ffffff" stroke="#ffffff"/>
+                        </svg>
+                    </div>
+                    <div className="card-title-group">
+                        <h1 className="card-main-title">Your Itinerary</h1>
+                        <p className="card-subtitle">Plan your perfect journey</p>
+                        <div className="card-header-underline"></div>
+                    </div>
                 </div>
 
-                <div className="controls">
-                    <div className="control-group">
-                        <label htmlFor="cityInput"><i className="fa-solid fa-map-pin"></i> Destination</label>
+                {/* Back to Home Link */}
+                <button 
+                    onClick={() => navigate('/home')} 
+                    className="back-home-btn"
+                >
+                    <i className="fa-solid fa-arrow-left"></i>
+                    <span>Back to Home</span>
+                </button>
+
+                {/* Form Controls */}
+                <div className="controls-wrap">
+                    {/* Destination Input Pill */}
+                    <div className="search-input-pill">
+                        <i className="fa-solid fa-location-dot search-pin-icon"></i>
                         <input
                             type="text"
                             id="cityInput"
                             placeholder="Where do you want to go?"
                             value={city}
                             onChange={(e) => setCity(e.target.value)}
+                            className="search-input-field"
                         />
+                        <i 
+                            className="fa-solid fa-magnifying-glass search-mag-icon"
+                            onClick={generatePlan}
+                        ></i>
                     </div>
-                    {outputHtml && (
-                        <div className="control-group replan-section">
-                            <label><i className="fa-solid fa-arrows-rotate"></i> Replan Specific Day</label>
 
-                            <select
-                                value={selectedDayToReplan}
-                                onChange={(e) => setSelectedDayToReplan(e.target.value)}
-                                style={{ width: '100%', marginBottom: '0.75rem' }}
+                    {/* Start and End Date Row */}
+                    <div className="dates-control-grid">
+                        {/* Start Date */}
+                        <div className="date-column">
+                            <div className="date-label-row">
+                                <i className="fa-regular fa-calendar"></i>
+                                <span>Start</span>
+                            </div>
+                            <div 
+                                className="date-input-pill"
+                                onClick={() => {
+                                    if (startDateRef.current) {
+                                        if (typeof startDateRef.current.showPicker === 'function') {
+                                            startDateRef.current.showPicker();
+                                        } else {
+                                            startDateRef.current.focus();
+                                        }
+                                    }
+                                }}
                             >
-                                {(startDate && endDate) ? getDaysInRange(startDate, endDate).map((_, i) => (
-                                    <option key={i + 1} value={i + 1}>Day {i + 1}</option>
-                                )) : <option value="1">Day 1</option>}
-                            </select>
+                                <span className={`date-display-val ${!startDate ? 'empty' : ''}`}>
+                                    {startDate ? formatDisplayDate(startDate) : 'dd-mm-yyyy'}
+                                </span>
+                                <i className="fa-solid fa-chevron-down date-chevron"></i>
+                                <input
+                                    ref={startDateRef}
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="sr-date-native"
+                                />
+                            </div>
+                        </div>
 
+                        {/* End Date */}
+                        <div className="date-column">
+                            <div className="date-label-row">
+                                <i className="fa-regular fa-calendar-check"></i>
+                                <span>End</span>
+                            </div>
+                            <div 
+                                className="date-input-pill"
+                                onClick={() => {
+                                    if (endDateRef.current) {
+                                        if (typeof endDateRef.current.showPicker === 'function') {
+                                            endDateRef.current.showPicker();
+                                        } else {
+                                            endDateRef.current.focus();
+                                        }
+                                    }
+                                }}
+                            >
+                                <span className={`date-display-val ${!endDate ? 'empty' : ''}`}>
+                                    {endDate ? formatDisplayDate(endDate) : 'dd-mm-yyyy'}
+                                </span>
+                                <i className="fa-solid fa-chevron-down date-chevron"></i>
+                                <input
+                                    ref={endDateRef}
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="sr-date-native"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Travellers Section */}
+                    <div>
+                        <div className="section-label">
+                            <i className="fa-solid fa-user"></i>
+                            <span>Travellers</span>
+                        </div>
+                        <div className="pills-row">
+                            {[
+                                { id: 'solo', label: 'Solo', icon: 'fa-user' },
+                                { id: 'partner', label: 'Partner', icon: 'fa-user-group' },
+                                { id: 'family', label: 'Family', icon: 'fa-users' }
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    className={`pill-btn ${travelType === item.id ? 'active-solid' : ''}`}
+                                    onClick={() => setTravelType(item.id)}
+                                >
+                                    <i className={`fa-solid ${item.icon}`}></i>
+                                    <span>{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Budget Section */}
+                    <div>
+                        <div className="section-label">
+                            <i className="fa-solid fa-wallet"></i>
+                            <span>Budget</span>
+                        </div>
+                        <div className="pills-row">
+                            {[
+                                { id: 'cheap', label: 'Budget', icon: 'fa-arrow-down-to-bracket' },
+                                { id: 'moderate', label: 'Standard', prefix: '$$' },
+                                { id: 'luxury', label: 'Luxury', prefix: '$$' }
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    className={`pill-btn ${budget === item.id ? 'active-outline' : ''}`}
+                                    onClick={() => setBudget(item.id)}
+                                >
+                                    {item.icon && <i className={`fa-solid ${item.icon}`}></i>}
+                                    {item.prefix && <span>{item.prefix}</span>}
+                                    <span>{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Interests Section */}
+                    <div>
+                        <div className="section-label">
+                            <i className="fa-solid fa-star"></i>
+                            <span>Interests</span>
+                        </div>
+                        <div className="pills-row">
+                            {[
+                                { id: 'mixed', label: 'Mixed', icon: 'fa-star' },
+                                { id: 'adventure', label: 'Adventure' },
+                                { id: 'waterfall', label: 'Nature' },
+                                { id: 'temple', label: 'Heritage' }
+                            ].map(item => (
+                                <button
+                                    key={item.id}
+                                    type="button"
+                                    className={`pill-btn ${placeType === item.id ? 'active-outline' : ''}`}
+                                    onClick={() => setPlaceType(item.id)}
+                                >
+                                    {item.icon && <i className={`fa-solid ${item.icon}`}></i>}
+                                    <span>{item.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Optional Custom Requests Accordion */}
+                    <div>
+                        <button 
+                            type="button" 
+                            className="custom-prompt-toggle"
+                            onClick={() => setShowCustomPrompt(!showCustomPrompt)}
+                        >
+                            <i className={`fa-solid ${showCustomPrompt ? 'fa-chevron-up' : 'fa-sliders'}`}></i>
+                            <span>{showCustomPrompt ? 'Hide custom requests' : 'Add custom requests (optional)'}</span>
+                        </button>
+                        {showCustomPrompt && (
                             <textarea
-                                placeholder="Tell me what to change for this day... (e.g. 'less walking', 'more food')"
-                                value={replanFeedback}
-                                onChange={(e) => setReplanFeedback(e.target.value)}
+                                className="custom-prompt-box"
                                 rows="2"
-                                style={{ marginBottom: '0.75rem', fontSize: '0.85rem' }}
+                                placeholder="E.g., wheelchair access, vegan/Jain food, elderly-friendly pace..."
+                                value={customPrompt}
+                                onChange={(e) => setCustomPrompt(e.target.value)}
                             ></textarea>
-
-                            <button onClick={replanDay} className="action-btn" style={{ width: '100%', background: 'var(--brand-coral-lt)', border: 'none', color: 'var(--brand-coral)', justifyContent: 'center' }}>
-                                <i className="fa-solid fa-wand-magic-sparkles"></i> Update Day {selectedDayToReplan}
-                            </button>
-                        </div>
-                    )}
-
-                    <div className="control-row">
-                        <div className="control-group">
-                            <label htmlFor="startDate"><i className="fa-regular fa-calendar"></i> Start</label>
-                            <input
-                                type="date"
-                                id="startDate"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                placeholder="dd-mm-yyyy"
-                            />
-                        </div>
-                        <div className="control-group">
-                            <label htmlFor="endDate"><i className="fa-regular fa-calendar-check"></i> End</label>
-                            <input
-                                type="date"
-                                id="endDate"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                placeholder="dd-mm-yyyy"
-                            />
-                        </div>
+                        )}
                     </div>
 
-                    <div className="control-group">
-                        <label>Travelers</label>
-                        <div className="select-grid" id="travelTypeOptions">
-                            {['solo', 'partner', 'family', 'friends'].map(type => (
-                                <button
-                                    key={type}
-                                    className={`select-btn ${travelType === type ? 'active' : ''}`}
-                                    onClick={() => setTravelType(type)}
-                                >
-                                    <i className={`fa-solid ${type === 'solo' ? 'fa-person' : type === 'partner' ? 'fa-heart' : type === 'family' ? 'fa-users' : 'fa-user-group'}`}></i> {type.charAt(0).toUpperCase() + type.slice(1)}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="control-group">
-                        <label>Budget</label>
-                        <div className="select-grid" id="budgetOptions">
-                            {[
-                                { val: 'cheap', label: 'Budget', icon: '$' },
-                                { val: 'moderate', label: 'Standard', icon: '$$' },
-                                { val: 'luxury', label: 'Luxury', icon: '$$$' }
-                            ].map(item => (
-                                <button
-                                    key={item.val}
-                                    className={`select-btn ${budget === item.val ? 'active' : ''}`}
-                                    onClick={() => setBudget(item.val)}
-                                >
-                                    <span>{item.icon}</span> {item.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="control-group">
-                        <label>Interests</label>
-                        <div className="select-grid" id="placeTypeOptions">
-                            {[
-                                { val: 'mixed', label: 'Mixed' },
-                                { val: 'adventure', label: 'Adventure' },
-                                { val: 'waterfall', label: 'Nature' },
-                                { val: 'temple', label: 'Heritage' }
-                            ].map(item => (
-                                <button
-                                    key={item.val}
-                                    className={`select-btn ${placeType === item.val ? 'active' : ''}`}
-                                    onClick={() => setPlaceType(item.val)}
-                                >
-                                    {item.val === 'mixed' && <i className="fa-solid fa-star" style={{ marginRight: '4px' }}></i>}
-                                    {item.label}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="control-group">
-                        <label htmlFor="customPrompt">Custom Requests</label>
-                        <textarea
-                            id="customPrompt"
-                            rows="3"
-                            placeholder="Specific requirements? (e.g., wheelchair access, vegan food)"
-                            value={customPrompt}
-                            onChange={(e) => setCustomPrompt(e.target.value)}
-                        ></textarea>
-                    </div>
-
-                    <button onClick={generatePlan} className="generate-btn">
-                        <i className="fa-solid fa-wand-magic-sparkles"></i> Generate Itinerary
+                    {/* Generate Itinerary Button */}
+                    <button 
+                        onClick={generatePlan} 
+                        className="generate-btn"
+                        disabled={loading}
+                    >
+                        <i className="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>Generate Itinerary</span>
+                        <i className="fa-solid fa-arrow-right"></i>
                     </button>
                 </div>
             </aside>
 
-            <main className="main-content">
-                <div className="result-header">
-                    <h2>Your Itinerary</h2>
-                    <div className="actions" style={{ display: 'flex', gap: '0.75rem' }}>
-                        {showDownload && (
-                            <>
-                                <button className="action-btn" disabled style={{ background: 'var(--brand-coral-lt)', color: 'var(--brand-coral)', border: 'none', cursor: 'default', opacity: 0.9 }}>
-                                    <i className="fa-solid fa-circle-check"></i> Auto-saved
-                                </button>
-                                <button onClick={() => window.location.href = '/trip-history'} className="action-btn" style={{ background: 'linear-gradient(135deg, #810000 0%, #600018 100%)', color: 'white', border: 'none', boxShadow: '0 4px 14px rgba(128,0,32,0.3)' }}>
-                                    <i className="fa-solid fa-clock-rotate-left"></i> View in Trip History
-                                </button>
-                                <button onClick={generateCalendarEvents} className="action-btn" style={{ background: 'linear-gradient(135deg, #34A853 0%, #1E8A3C 100%)', color: 'white', border: 'none', boxShadow: '0 4px 14px rgba(52,168,83,0.3)' }}>
-                                    <i className="fa-solid fa-calendar-plus"></i> Add to Calendar
-                                </button>
-                                <button id="downloadBtn" onClick={downloadPDF} className="action-btn" style={{ background: 'linear-gradient(135deg, var(--brand-coral) 0%, var(--brand-coral-dk) 100%)', color: 'white', border: 'none', boxShadow: '0 4px 14px rgba(211,107,70,0.3)' }}>
-                                    <i className="fa-solid fa-file-pdf"></i> Download PDF
-                                </button>
-                            </>
-                        )}
+            {/* ── Right Main Card (Laptop & Tablet) ── */}
+            <main className="main-content-card">
+                {loading ? (
+                    <div className="loading-view">
+                        <div className="loading-spinner-circle"></div>
+                        <p className="loading-msg-text">{loadingMsg}</p>
                     </div>
-                </div>
-
-                <div id="output" className={`output-area ${(!outputHtml && !weatherData && !loading) ? 'placeholder-bg' : ''}`}>
-
-                    {loading ? (
-                        <div className="loading">
-                            <i className="fa-solid fa-circle-notch"></i>
-                            <p>{loadingMsg}</p>
+                ) : (outputHtml || weatherData) ? (
+                    <div className="result-view-wrap" id="itineraryOutputTarget">
+                        {/* Results Header */}
+                        <div className="result-header-bar">
+                            <div className="result-title-group">
+                                <h2>Your Tamil Nadu Itinerary</h2>
+                                <p>{city} • {startDate} to {endDate}</p>
+                            </div>
+                            <div className="result-actions-row">
+                                <button className="action-pill-btn btn-saved">
+                                    <i className="fa-solid fa-circle-check"></i>
+                                    <span>Auto-saved</span>
+                                </button>
+                                <button 
+                                    onClick={() => navigate('/trip-history')}
+                                    className="action-pill-btn btn-history"
+                                >
+                                    <i className="fa-solid fa-clock-rotate-left"></i>
+                                    <span>Trip History</span>
+                                </button>
+                                <button 
+                                    onClick={generateCalendarEvents}
+                                    className="action-pill-btn btn-calendar"
+                                    disabled={isExporting}
+                                >
+                                    <i className="fa-solid fa-calendar-plus"></i>
+                                    <span>Sync Calendar</span>
+                                </button>
+                                <button 
+                                    onClick={downloadPDF}
+                                    className="action-pill-btn btn-pdf"
+                                >
+                                    <i className="fa-solid fa-file-pdf"></i>
+                                    <span>Download PDF</span>
+                                </button>
+                            </div>
                         </div>
-                    ) : (
-                        (outputHtml || weatherData) ? (
-                            <div className="output-area-content">
-                                {weatherData && (
-                                    <div className="weather-section-realistic">
-                                        <div className="weather-section-header">
-                                            <div className="weather-header-titles">
-                                                <span className="weather-section-pill"><i className="fa-solid fa-satellite-dish"></i> Live Climate Forecast</span>
-                                                <h3>Weather Outlook for {weatherCity}</h3>
+
+                        {/* Live Weather Forecast Cards */}
+                        {weatherData && (
+                            <div className="weather-section-sage">
+                                <div className="weather-header-sage">
+                                    <span className="weather-pill-tag">
+                                        <i className="fa-solid fa-cloud-sun"></i> Live Weather Outlook for {weatherCity}
+                                    </span>
+                                </div>
+                                <div className="weather-grid-cards">
+                                    {weatherData.map((s) => (
+                                        <div key={s.day} className="weather-day-card">
+                                            <div className="day-badge-row">
+                                                <span className="day-badge-num">DAY {s.day}</span>
+                                                <span className="day-rel-name">{s.relativeDay}</span>
                                             </div>
-                                            <span className="weather-forecast-days-count">{weatherData.length}-Day Daily Forecast</span>
-                                        </div>
-
-                                        <div className="realistic-weather-grid">
-                                            {weatherData.map((s) => (
-                                                <div key={s.day} className={`realistic-weather-card ${s.weatherType}`}>
-                                                    {/* Background with Ambient Overlay */}
-                                                    <div 
-                                                        className="weather-card-bg" 
-                                                        style={{ backgroundImage: `url(${s.bgImage})` }}
-                                                    >
-                                                        <div className="weather-card-overlay"></div>
-                                                    </div>
-
-                                                    {/* Card Header */}
-                                                    <div className="weather-card-header">
-                                                        <div className="weather-card-day-info">
-                                                            <span className="weather-day-badge">DAY {s.day}</span>
-                                                            <span className="weather-day-subtitle">{s.relativeDay}</span>
-                                                        </div>
-                                                        <button 
-                                                            className="weather-card-menu-btn" 
-                                                            title="Travel advisory"
-                                                            onClick={() => alert(`💡 Weather Advice for Day ${s.day} in ${weatherCity}:\n\n${s.weatherTip}`)}
-                                                        >
-                                                            <i className="fa-solid fa-ellipsis-vertical"></i>
-                                                        </button>
-                                                    </div>
-
-                                                    {/* Visual Center Area */}
-                                                    <div className="weather-card-body">
-                                                        {s.weatherType === 'sunny' ? (
-                                                            <div className="realistic-sun-visual">
-                                                                <div className="sun-core"></div>
-                                                                <div className="sun-corona"></div>
-                                                                <div className="sun-rays"></div>
-                                                            </div>
-                                                        ) : s.weatherType === 'rain' ? (
-                                                            <div className="realistic-rain-visual">
-                                                                <svg className="weather-svg-icon" viewBox="0 0 64 64" fill="none">
-                                                                    <path d="M46 38c5.5 0 10-4.5 10-10 0-5.2-4-9.5-9.1-9.9C45.6 11.5 39.4 6 32 6c-7.6 0-14 5.8-14.9 13.3C12.4 20.3 8 24.6 8 30c0 5.5 4.5 10 10 10h28z" fill="rgba(255,255,255,0.92)" />
-                                                                    <line x1="22" y1="46" x2="18" y2="56" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" className="drop-1" />
-                                                                    <line x1="32" y1="46" x2="28" y2="56" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" className="drop-2" />
-                                                                    <line x1="42" y1="46" x2="38" y2="56" stroke="#38bdf8" strokeWidth="3" strokeLinecap="round" className="drop-3" />
-                                                                </svg>
-                                                            </div>
-                                                        ) : (
-                                                            <div className="realistic-cloud-visual">
-                                                                <svg className="weather-svg-icon" viewBox="0 0 64 64" fill="none">
-                                                                    <path d="M46 42c5.5 0 10-4.5 10-10 0-5.2-4-9.5-9.1-9.9C45.6 15.5 39.4 10 32 10c-7.6 0-14 5.8-14.9 13.3C12.4 24.3 8 28.6 8 34c0 5.5 4.5 10 10 10h28z" fill="rgba(255,255,255,0.92)" />
-                                                                </svg>
-                                                            </div>
-                                                        )}
-
-                                                        <div className="weather-temp-number">{s.temp}°C</div>
-                                                        <div className="weather-desc-label">{s.desc}</div>
-                                                    </div>
-
-                                                    {/* Frosted Glass Footer Pill */}
-                                                    <div className="weather-glass-pill">
-                                                        {s.weatherType === 'sunny' ? (
-                                                            <>
-                                                                <div className="pill-metric-item">
-                                                                    <div className="pill-metric-val"><i className="fa-solid fa-temperature-half"></i> {s.feelsLike}°C</div>
-                                                                    <div className="pill-metric-lbl">Feels like</div>
-                                                                </div>
-                                                                <div className="pill-metric-item">
-                                                                    <div className="pill-metric-val"><i className="fa-solid fa-droplet"></i> {s.humidity}%</div>
-                                                                    <div className="pill-metric-lbl">Humidity</div>
-                                                                </div>
-                                                                <div className="pill-metric-item">
-                                                                    <div className="pill-metric-val"><i className="fa-solid fa-wind"></i> {s.windSpeed} km/h</div>
-                                                                    <div className="pill-metric-lbl">Wind</div>
-                                                                </div>
-                                                                <div className="pill-metric-item">
-                                                                    <div className="pill-metric-val"><i className="fa-solid fa-sun"></i> {s.sunrise}</div>
-                                                                    <div className="pill-metric-lbl">Sunrise</div>
-                                                                </div>
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <div className="pill-metric-item">
-                                                                    <div className="pill-metric-val"><i className="fa-solid fa-droplet"></i> {s.humidity}%</div>
-                                                                    <div className="pill-metric-lbl">Humidity</div>
-                                                                </div>
-                                                                <div className="pill-metric-item">
-                                                                    <div className="pill-metric-val"><i className="fa-solid fa-wind"></i> {s.windSpeed} km/h</div>
-                                                                    <div className="pill-metric-lbl">Wind</div>
-                                                                </div>
-                                                                <div className="pill-metric-item">
-                                                                    <div className="pill-metric-val"><i className="fa-solid fa-umbrella"></i> {s.rainChance}%</div>
-                                                                    <div className="pill-metric-lbl">Chance of Rain</div>
-                                                                </div>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                                {detectedFestivals && detectedFestivals.length > 0 && (
-                                    <div className="festival-advisory-banner">
-                                        <div className="festival-banner-icon">
-                                            <i className="fa-solid fa-fire-flame-curved"></i>
-                                        </div>
-                                        <div className="festival-banner-content">
-                                            <div className="festival-banner-badge">
-                                                <span><i className="fa-solid fa-bell"></i> Cultural Festival Alert</span>
-                                                <span className="festival-tamil-month">{detectedFestivals[0].tamilMonth}</span>
-                                            </div>
-                                            <h4>{detectedFestivals[0].title}</h4>
-                                            <p>{detectedFestivals[0].longDesc || detectedFestivals[0].desc}</p>
-                                            <div className="festival-advisory-note">
-                                                <i className="fa-solid fa-circle-exclamation"></i>
-                                                <span><strong>Pilgrim & Traffic Advisory:</strong> Expect higher devotee footfall, colorful temple chariot processions, and special poojas. Consider booking temple darshan passes or verified local guides in advance.</span>
+                                            <div className="temp-large">{s.temp}°C</div>
+                                            <div className="desc-text">{s.desc}</div>
+                                            <div className="weather-metrics-pill">
+                                                <span>Feels {s.feelsLike}°</span>
+                                                <span>Humidity {s.humidity}%</span>
+                                                <span>Rain {s.rainChance}%</span>
                                             </div>
                                         </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Replan Day Section */}
+                        <div className="replan-box-wrap">
+                            <h4>
+                                <i className="fa-solid fa-arrows-rotate"></i>
+                                <span>Want to adjust a specific day?</span>
+                            </h4>
+                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                                <select
+                                    value={selectedDayToReplan}
+                                    onChange={(e) => setSelectedDayToReplan(e.target.value)}
+                                    className="replan-select"
+                                    style={{ maxWidth: '140px' }}
+                                >
+                                    {(startDate && endDate) ? getDaysInRange(startDate, endDate).map((_, i) => (
+                                        <option key={i + 1} value={i + 1}>Day {i + 1}</option>
+                                    )) : <option value="1">Day 1</option>}
+                                </select>
+                                <input
+                                    type="text"
+                                    placeholder="E.g., more temple time, lighter walking, authentic lunch..."
+                                    value={replanFeedback}
+                                    onChange={(e) => setReplanFeedback(e.target.value)}
+                                    className="replan-textarea"
+                                    style={{ flex: 1, minWidth: '220px' }}
+                                />
+                                <button 
+                                    onClick={replanDay} 
+                                    className="action-pill-btn btn-pdf"
+                                    style={{ whiteSpace: 'nowrap' }}
+                                >
+                                    Update Day {selectedDayToReplan}
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Markdown Generated Itinerary */}
+                        {outputHtml && (
+                            <div 
+                                className="itinerary-content-card-sage"
+                                dangerouslySetInnerHTML={{ __html: outputHtml }}
+                            ></div>
+                        )}
+
+                        {/* Connected Modules Section */}
+                        <div className="ecosystem-modules-sage">
+                            <div className="ecosystem-header">
+                                <span className="weather-pill-tag">
+                                    <i className="fa-solid fa-compass"></i> TN Cultural Ecosystem
+                                </span>
+                                <h3>Enrich Your Experience</h3>
+                            </div>
+                            <div className="ecosystem-cards-grid">
+                                {culinaryHighlight && (
+                                    <div className="eco-card">
+                                        <div className="eco-card-top">
+                                            <span className="eco-badge">Flavors of TN</span>
+                                            <span style={{ fontSize: '12px', color: 'var(--color-muted)' }}>{culinaryHighlight.region}</span>
+                                        </div>
+                                        <h4>{culinaryHighlight.title}</h4>
+                                        <p className="eco-tagline">{culinaryHighlight.tagline}</p>
+                                        <button 
+                                            onClick={() => navigate(culinaryHighlight.link)}
+                                            className="eco-action-btn"
+                                        >
+                                            <span>Explore Culinary</span>
+                                            <i className="fa-solid fa-arrow-right"></i>
+                                        </button>
                                     </div>
                                 )}
 
-                                {templeIntel && (
-                                    <div className="temple-protocol-card">
-                                        <div className="temple-card-header">
-                                            <div className="temple-header-title">
-                                                <i className="fa-solid fa-gopuram temple-icon"></i>
-                                                <div>
-                                                    <h4>{templeIntel.name} — Agamic Darshan & Etiquette Protocol</h4>
-                                                    <span className="temple-subtitle">Heritage guidelines to ensure a smooth, respectful pilgrimage</span>
-                                                </div>
-                                            </div>
-                                            <span className="temple-status-badge">
-                                                <i className="fa-solid fa-shield-halved"></i> Cultural Etiquette Active
-                                            </span>
+                                {agriHighlight && (
+                                    <div className="eco-card">
+                                        <div className="eco-card-top">
+                                            <span className="eco-badge">Agri & Village</span>
+                                            <span style={{ fontSize: '12px', color: 'var(--color-muted)' }}>{agriHighlight.location}</span>
                                         </div>
-
-                                        <div className="temple-protocol-grid">
-                                            <div className="protocol-item">
-                                                <div className="protocol-icon-wrap timing">
-                                                    <i className="fa-solid fa-clock"></i>
-                                                </div>
-                                                <div className="protocol-text">
-                                                    <strong>Optimal Darshan Timings</strong>
-                                                    <p>{templeIntel.darshanTimings}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="protocol-item highlight-alert">
-                                                <div className="protocol-icon-wrap pause">
-                                                    <i className="fa-solid fa-door-closed"></i>
-                                                </div>
-                                                <div className="protocol-text">
-                                                    <strong>Midday Agamic Pause (12:30 – 4 PM)</strong>
-                                                    <p>{templeIntel.middayRule}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="protocol-item">
-                                                <div className="protocol-icon-wrap dress">
-                                                    <i className="fa-solid fa-vest"></i>
-                                                </div>
-                                                <div className="protocol-text">
-                                                    <strong>Mandatory Dress Code</strong>
-                                                    <p>{templeIntel.dressCode}</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="protocol-item">
-                                                <div className="protocol-icon-wrap mobile">
-                                                    <i className="fa-solid fa-mobile-screen-button"></i>
-                                                </div>
-                                                <div className="protocol-text">
-                                                    <strong>Footwear & Electronics</strong>
-                                                    <p>{templeIntel.electronicsPolicy} {templeIntel.footwearTips}</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        {templeIntel.insiderTip && (
-                                            <div className="temple-insider-tip">
-                                                <i className="fa-solid fa-lightbulb"></i>
-                                                <span><strong>Insider Tip:</strong> {templeIntel.insiderTip}</span>
-                                            </div>
-                                        )}
+                                        <h4>{agriHighlight.title}</h4>
+                                        <p className="eco-tagline">{agriHighlight.stayType} • {agriHighlight.activities?.slice(0, 2).join(', ')}</p>
+                                        <button 
+                                            onClick={() => navigate(agriHighlight.link)}
+                                            className="eco-action-btn"
+                                        >
+                                            <span>Explore Agri Hub</span>
+                                            <i className="fa-solid fa-arrow-right"></i>
+                                        </button>
                                     </div>
                                 )}
 
-                                {outputHtml && (
-                                    <div className="itinerary-content-card">
-                                        <div dangerouslySetInnerHTML={{ __html: outputHtml }}></div>
-                                    </div>
-                                )}
-
-                                {outputHtml && (
-                                    <div className="ecosystem-modules-section">
-                                        <div className="ecosystem-section-header">
-                                            <div className="ecosystem-title-wrap">
-                                                <span className="ecosystem-pill"><i className="fa-solid fa-compass"></i> Connected Modules</span>
-                                                <h3>Deepen Your Tamil Nadu Journey</h3>
-                                            </div>
-                                            <span className="ecosystem-count">Cultural & Experience Hub</span>
+                                {matchedGuides && matchedGuides.length > 0 && (
+                                    <div className="eco-card">
+                                        <div className="eco-card-top">
+                                            <span className="eco-badge">Verified Guides</span>
+                                            <span style={{ fontSize: '12px', color: 'var(--color-muted)' }}>{matchedGuides.length} Available</span>
                                         </div>
-
-                                        <div className="ecosystem-cards-grid">
-                                            {/* Culinary Card */}
-                                            {culinaryHighlight && (
-                                                <div className="ecosystem-card culinary-card">
-                                                    <div className="eco-card-top">
-                                                        <div className="eco-badge culinary"><i className="fa-solid fa-utensils"></i> Flavors of TN</div>
-                                                        <span className="eco-region-tag">{culinaryHighlight.region}</span>
-                                                    </div>
-                                                    <h4>{culinaryHighlight.title}</h4>
-                                                    <p className="eco-tagline">{culinaryHighlight.tagline}</p>
-                                                    <div className="eco-chips-list">
-                                                        {culinaryHighlight.specialties.map((item, i) => (
-                                                            <span key={i} className="eco-chip"><i className="fa-solid fa-bowl-food"></i> {item}</span>
-                                                        ))}
-                                                    </div>
-                                                    <div className="eco-famous-spots">
-                                                        <i className="fa-solid fa-location-arrow"></i> Iconic: {culinaryHighlight.famousSpots.slice(0, 2).join(', ')}
-                                                    </div>
-                                                    <button 
-                                                        onClick={() => navigate(culinaryHighlight.link)}
-                                                        className="eco-action-btn culinary-btn"
-                                                    >
-                                                        <span>Explore Culinary Guide</span>
-                                                        <i className="fa-solid fa-arrow-right"></i>
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {/* Agri Card */}
-                                            {agriHighlight ? (
-                                                <div className="ecosystem-card agri-card">
-                                                    <div className="eco-card-top">
-                                                        <div className="eco-badge agri"><i className="fa-solid fa-leaf"></i> Agri & Village Tourism</div>
-                                                        <span className="eco-region-tag">{agriHighlight.location}</span>
-                                                    </div>
-                                                    <h4>{agriHighlight.title}</h4>
-                                                    <p className="eco-tagline">Season: {agriHighlight.season} • Stay: {agriHighlight.stayType}</p>
-                                                    <div className="eco-chips-list">
-                                                        {agriHighlight.activities.map((act, i) => (
-                                                            <span key={i} className="eco-chip"><i className="fa-solid fa-seedling"></i> {act}</span>
-                                                        ))}
-                                                    </div>
-                                                    <div className="eco-famous-spots">
-                                                        <i className="fa-solid fa-house-chimney"></i> Verified rural farmstays & plantation trails
-                                                    </div>
-                                                    <button 
-                                                        onClick={() => navigate(agriHighlight.link)}
-                                                        className="eco-action-btn agri-btn"
-                                                    >
-                                                        <span>Explore Agri Experiences</span>
-                                                        <i className="fa-solid fa-arrow-right"></i>
-                                                    </button>
-                                                </div>
-                                            ) : (
-                                                <div className="ecosystem-card agri-card">
-                                                    <div className="eco-card-top">
-                                                        <div className="eco-badge agri"><i className="fa-solid fa-leaf"></i> Rural & Agri Tourism</div>
-                                                        <span className="eco-region-tag">Tamil Nadu Farms</span>
-                                                    </div>
-                                                    <h4>Explore Authentic Village Life</h4>
-                                                    <p className="eco-tagline">Tender coconut groves, organic hill tea, and pottery workshops.</p>
-                                                    <div className="eco-chips-list">
-                                                        <span className="eco-chip"><i className="fa-solid fa-seedling"></i> Nilgiris Tea Tasting</span>
-                                                        <span className="eco-chip"><i className="fa-solid fa-seedling"></i> Pollachi Coconut Groves</span>
-                                                    </div>
-                                                    <div className="eco-famous-spots">
-                                                        <i className="fa-solid fa-house-chimney"></i> Farm-to-table dining & peaceful village retreats
-                                                    </div>
-                                                    <button 
-                                                        onClick={() => navigate('/agri')}
-                                                        className="eco-action-btn agri-btn"
-                                                    >
-                                                        <span>Explore Agri Hub</span>
-                                                        <i className="fa-solid fa-arrow-right"></i>
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {/* Verified Local Guides Card */}
-                                            <div className="ecosystem-card guides-card">
-                                                <div className="eco-card-top">
-                                                    <div className="eco-badge guide"><i className="fa-solid fa-user-shield"></i> Local Guides Match</div>
-                                                    <span className="eco-region-tag">{matchedGuides.length} Verified</span>
-                                                </div>
-                                                <h4>Certified Tour Guides</h4>
-                                                <p className="eco-tagline">Deep temple epigraphy, architectural secrets, and crowd navigation.</p>
-                                                
-                                                <div className="matched-guides-list">
-                                                    {matchedGuides.slice(0, 2).map((g) => (
-                                                        <div key={g.id} className="mini-guide-pill" onClick={() => navigate(`/guide/${g.id}`)}>
-                                                            <img src={g.image} alt={g.name} className="mini-guide-avatar" />
-                                                            <div className="mini-guide-info">
-                                                                <div className="mini-guide-name-row">
-                                                                    <strong>{g.name}</strong>
-                                                                    <span className="mini-guide-rating"><i className="fa-solid fa-star"></i> {g.rating}</span>
-                                                                </div>
-                                                                <span className="mini-guide-sub">{g.specialty} • {g.price}</span>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-
-                                                <button 
-                                                    onClick={() => navigate('/guide')}
-                                                    className="eco-action-btn guide-btn"
-                                                >
-                                                    <span>Browse & Book Guides</span>
-                                                    <i className="fa-solid fa-arrow-right"></i>
-                                                </button>
-                                            </div>
-                                        </div>
+                                        <h4>Local Heritage Guides</h4>
+                                        <p className="eco-tagline">Certified epigraphy and temple architectural experts in {city}.</p>
+                                        <button 
+                                            onClick={() => navigate('/guide')}
+                                            className="eco-action-btn"
+                                        >
+                                            <span>Browse Guides</span>
+                                            <i className="fa-solid fa-arrow-right"></i>
+                                        </button>
                                     </div>
                                 )}
                             </div>
-                        ) : (
-                            <div className="placeholder-state"></div>
-                        )
-                    )}
-                </div>
+                        </div>
+                    </div>
+                ) : (
+                    /* ── Empty State View (Matches Image 1 Exactly) ── */
+                    <div className="empty-state-view">
+                        <img 
+                            src="/suitcase_clean.png" 
+                            alt="Your itinerary will appear here" 
+                            className="empty-suitcase-art"
+                        />
+                        <h2 className="empty-state-heading">Your itinerary will appear here</h2>
+                        <p className="empty-state-desc">
+                            Select your preferences and click Generate Itinerary to get started.
+                        </p>
+                        <img 
+                            src="/right_panel_landscape.png" 
+                            alt="Tamil Nadu Gopuram Landscape" 
+                            className="empty-landscape-art"
+                        />
+                    </div>
+                )}
             </main>
 
+            {/* ── Mobile Bottom Banner (Visible only on mobile screens < 900px) ── */}
+            <div className="mob-bottom-bar"></div>
+
+            {/* ── Google Calendar Sync Modal ── */}
             {showSyncModal && (
-                <div className="modal-overlay" onClick={() => setShowSyncModal(false)}>
-                    <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px', width: '95%' }}>
-                        <div className="modal-header">
-                            <h3><i className="fa-solid fa-calendar-check"></i> Sync to Google Calendar</h3>
-                            <button className="close-modal" onClick={() => setShowSyncModal(false)}>
+                <div 
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(27, 67, 50, 0.4)',
+                        backdropFilter: 'blur(4px)',
+                        zIndex: 200,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '16px'
+                    }}
+                    onClick={() => setShowSyncModal(false)}
+                >
+                    <div 
+                        style={{
+                            background: '#ffffff',
+                            borderRadius: '24px',
+                            maxWidth: '560px',
+                            width: '100%',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.2)',
+                            overflow: 'hidden'
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div style={{
+                            padding: '20px 24px',
+                            borderBottom: '1px solid #edf3eb',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between'
+                        }}>
+                            <h3 style={{ margin: 0, color: '#1b4332', fontSize: '18px', fontWeight: 700 }}>
+                                <i className="fa-solid fa-calendar-check" style={{ marginRight: '8px' }}></i>
+                                Sync Itinerary to Google Calendar
+                            </h3>
+                            <button 
+                                onClick={() => setShowSyncModal(false)}
+                                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#6c8874' }}
+                            >
                                 &times;
                             </button>
                         </div>
-                        <div className="sync-list" style={{ maxHeight: '400px', overflowY: 'auto', padding: '1rem' }}>
+
+                        <div style={{ maxHeight: '360px', overflowY: 'auto', padding: '16px 24px' }}>
                             {calendarEvents.map((event, idx) => (
-                                <div key={idx} className="sync-item" style={{
+                                <div key={idx} style={{
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    padding: '1rem',
-                                    background: 'var(--accent-soft)',
+                                    padding: '12px 16px',
+                                    background: '#f4f7f1',
                                     borderRadius: '12px',
-                                    marginBottom: '0.75rem',
-                                    gap: '1rem',
-                                    border: '1px solid var(--border-color)'
+                                    marginBottom: '10px',
+                                    border: '1px solid #e0e8dc'
                                 }}>
-                                    <div style={{ flex: 1 }}>
-                                        <h4 style={{ margin: 0, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{event.summary}</h4>
-                                        <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                                <i className="fa-solid fa-calendar-day"></i> Day {event.day}
-                                            </span>
-                                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                                <i className="fa-solid fa-clock"></i> {new Date(event.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                            </span>
+                                    <div>
+                                        <h4 style={{ margin: 0, fontSize: '14px', color: '#1b4332' }}>{event.summary}</h4>
+                                        <div style={{ fontSize: '12px', color: '#6c8874', marginTop: '2px' }}>
+                                            Day {event.day} • {new Date(event.start.dateTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                         </div>
                                     </div>
                                     <a
                                         href={createGoogleCalendarUrl(event)}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="action-btn"
-                                        style={{ background: 'var(--accent-primary)', color: 'white', border: 'none', padding: '0.6rem 1rem', fontSize: '0.85rem', textDecoration: 'none', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}
+                                        style={{
+                                            background: '#1b4332',
+                                            color: '#ffffff',
+                                            textDecoration: 'none',
+                                            padding: '6px 14px',
+                                            borderRadius: '9999px',
+                                            fontSize: '12px',
+                                            fontWeight: 600,
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '5px'
+                                        }}
                                     >
                                         <i className="fa-solid fa-plus"></i> Add
                                     </a>
                                 </div>
                             ))}
                         </div>
-                        <div className="modal-actions" style={{ padding: '1.5rem', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
-                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-                                <i className="fa-solid fa-circle-info"></i> Clicking "Add" will open a Google Calendar window. Click <strong>"Save"</strong> in that window to confirm.
-                            </p>
-                            <button className="action-btn" onClick={() => setShowSyncModal(false)} style={{ width: '100%', justifyContent: 'center', background: 'var(--accent-soft)', color: 'var(--accent-primary)', border: 'none' }}>
+
+                        <div style={{ padding: '16px 24px', borderTop: '1px solid #edf3eb', textAlign: 'right' }}>
+                            <button
+                                onClick={() => setShowSyncModal(false)}
+                                style={{
+                                    background: '#edf3eb',
+                                    color: '#1b4332',
+                                    border: 'none',
+                                    padding: '8px 20px',
+                                    borderRadius: '9999px',
+                                    fontWeight: 600,
+                                    cursor: 'pointer'
+                                }}
+                            >
                                 Done
                             </button>
                         </div>
