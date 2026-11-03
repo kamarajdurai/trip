@@ -1,13 +1,13 @@
 /* Professional Accents for Booking Page */
 
-/* Remove childish pink/purple overrides */
 .booking-modal-content {
     background: #ffffff !important;
     border-radius: 20px !important;
     border: 1px solid #e5e7eb !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.35) !important;
     padding: 0 !important;
     overflow: hidden !important;
+    margin: auto !important;
 }
 
 .booking-header {
@@ -17,7 +17,8 @@
     display: flex !important;
     justify-content: space-between !important;
     align-items: center !important;
-    border-bottom: 1px solid #e5e7eb !important;
+    border-bottom: 1px solid #2d3748 !important;
+    flex-shrink: 0 !important;
 }
 
 .booking-body {
@@ -25,22 +26,30 @@
     padding: 28px !important;
     flex: 1 !important;
     overflow-y: auto !important;
+    overscroll-behavior: contain !important;
 }
 
 .close-modal {
-    font-size: 2.2rem !important;
+    font-size: 1.8rem !important;
     font-weight: 300 !important;
-    color: #ffffff !important;
+    color: #9ca3af !important;
     cursor: pointer !important;
     line-height: 1 !important;
     transition: all 0.2s ease !important;
     user-select: none !important;
     margin-left: 20px !important;
+    width: 36px !important;
+    height: 36px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
 }
 
 .close-modal:hover {
-    color: #ff8c00 !important;
-    transform: scale(1.1) !important;
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.15) !important;
+    transform: rotate(90deg) !important;
 }
 
 .booking-section h3 {
@@ -49,13 +58,21 @@
 }
 
 .form-input {
-    border: 2px solid #e5e7eb !important;
+    border: 1.5px solid #e5e7eb !important;
     color: #111827 !important;
+    border-radius: 10px !important;
+    padding: 10px 16px !important;
+    height: 48px !important;
+    box-sizing: border-box !important;
+    font-family: inherit !important;
+    font-size: 0.95rem !important;
+    width: 100% !important;
 }
 
 .form-input:focus {
-    border-color: #ff8c00 !important;
-    box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.1) !important;
+    border-color: #800020 !important;
+    box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.12) !important;
+    background-color: #ffffff !important;
 }
 
 @media (max-width: 768px) {
@@ -64,10 +81,12 @@
     }
 
     .booking-body {
-        padding: 20px !important;
+        padding: 20px 16px !important;
     }
 
     .close-modal {
-        font-size: 1.8rem !important;
+        font-size: 1.6rem !important;
+        width: 32px !important;
+        height: 32px !important;
     }
 }

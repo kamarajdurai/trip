@@ -1604,7 +1604,7 @@ body {
     }
 
     /* Prevent bottom content from getting obscured by the fixed bottom nav */
-    body {
+    body:has(.mobile-bottom-nav) {
         padding-bottom: calc(62px + env(safe-area-inset-bottom, 0px));
     }
 }

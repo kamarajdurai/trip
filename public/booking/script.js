@@ -322,6 +322,11 @@ function displayHotelCard(place) {
         img.src = photoUrl;
         img.alt = place.name;
         card.appendChild(img);
+    } else {
+        const fallback = document.createElement('div');
+        fallback.className = 'hotel-card-fallback-img';
+        fallback.innerHTML = '<i class="fa-solid fa-hotel"></i>';
+        card.appendChild(fallback);
     }
 
     // Create content wrapper
@@ -391,6 +396,7 @@ function displayHotelCard(place) {
     priceInfo.className = 'price-info';
 
     if (place.price_level !== undefined && place.price_level !== null && place.price_level >= 0 && place.price_level <= 4) {
+        priceInfo.classList.add('has-price');
         const priceLevels = ['Free', '$', '$$', '$$$', '$$$$'];
         priceInfo.textContent = priceLevels[place.price_level] || 'Contact for pricing';
     } else {
@@ -548,7 +554,8 @@ function showHotelDetails(place) {
                 place_id: '${place.place_id}',
                 name: '${place.name.replace(/'/g, "\\'")}'
             })">
-                Book a Room ➜
+                <span>Book a Room</span>
+                <i class="fa-solid fa-arrow-right-long"></i>
             </button>
         </div>
     `;
@@ -560,6 +567,7 @@ function showHotelDetails(place) {
 
     modal.innerHTML = content;
     modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
 
     // Close modal when clicking outside
     window.onclick = function (event) {
@@ -574,6 +582,7 @@ function closeHotelDetails() {
     const modal = document.getElementById('hotelDetailsModal');
     if (modal) {
         modal.style.display = 'none';
+        document.body.style.overflow = '';
     }
 }
 
@@ -746,6 +755,7 @@ function showBookingInterface(place) {
 
     modal.innerHTML = content;
     modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
 
     // Close modal when clicking outside
     window.onclick = function (event) {
@@ -799,6 +809,70 @@ function showBookingForm(hotelId, roomNumber, hotelName) {
                         </div>
                     </div>
 
+                    <div class="form-group who-dropdown-container">
+                        <label>Who</label>
+                        <div class="who-dropdown-trigger" onclick="toggleWhoDropdown(event)">
+                            <div class="who-trigger-content">
+                                <span class="who-icon" style="color: var(--primary-color);">👥</span>
+                                <span id="whoSummaryText" class="who-trigger-text">1 Adult</span>
+                            </div>
+                            <span class="who-chevron">▼</span>
+                        </div>
+                        <div id="whoPopoverCard" class="who-popover-card" style="display: none;">
+                            <!-- Adults -->
+                            <div class="who-popover-row">
+                                <div className="who-row-info">
+                                    <span class="who-row-title">Adults</span>
+                                    <span class="who-row-subtitle">Ages 13 or above</span>
+                                </div>
+                                <div class="who-stepper">
+                                    <button type="button" class="stepper-btn" onclick="stepGuest('adults', -1)">−</button>
+                                    <span id="adultsCount" class="stepper-value">1</span>
+                                    <button type="button" class="stepper-btn" onclick="stepGuest('adults', 1)">+</button>
+                                </div>
+                            </div>
+                            <!-- Children -->
+                            <div class="who-popover-row">
+                                <div class="who-row-info">
+                                    <span class="who-row-title">Children</span>
+                                    <span class="who-row-subtitle">Ages 2–12</span>
+                                </div>
+                                <div class="who-stepper">
+                                    <button type="button" class="stepper-btn" onclick="stepGuest('children', -1)">−</button>
+                                    <span id="childrenCount" class="stepper-value">0</span>
+                                    <button type="button" class="stepper-btn" onclick="stepGuest('children', 1)">+</button>
+                                </div>
+                            </div>
+                            <!-- Infants -->
+                            <div class="who-popover-row">
+                                <div class="who-row-info">
+                                    <span class="who-row-title">Infants</span>
+                                    <span class="who-row-subtitle">Under 2</span>
+                                </div>
+                                <div class="who-stepper">
+                                    <button type="button" class="stepper-btn" onclick="stepGuest('infants', -1)">−</button>
+                                    <span id="infantsCount" class="stepper-value">0</span>
+                                    <button type="button" class="stepper-btn" onclick="stepGuest('infants', 1)">+</button>
+                                </div>
+                            </div>
+                            <!-- Pets -->
+                            <div class="who-popover-row who-popover-row-last">
+                                <div class="who-row-info">
+                                    <span class="who-row-title">Pets</span>
+                                    <span class="who-row-subtitle who-service-link">Bringing a service animal?</span>
+                                </div>
+                                <div class="who-stepper">
+                                    <button type="button" class="stepper-btn" onclick="stepGuest('pets', -1)">−</button>
+                                    <span id="petsCount" class="stepper-value">0</span>
+                                    <button type="button" class="stepper-btn" onclick="stepGuest('pets', 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="who-popover-footer">
+                                <button type="button" class="who-done-btn" onclick="document.getElementById('whoPopoverCard').style.display='none'">Done</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-actions">
                         <button type="button" class="btn-cancel" onclick="closeBookingForm()">Cancel</button>
                         <button type="submit" class="btn-confirm">Confirm Booking</button>
@@ -810,6 +884,7 @@ function showBookingForm(hotelId, roomNumber, hotelName) {
 
     modal.innerHTML = content;
     modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
 
     // Set min date for check-in to today
     const today = new Date().toISOString().split('T')[0];
@@ -825,7 +900,44 @@ function closeBookingForm() {
     const modal = document.getElementById('bookingFormModal');
     if (modal) {
         modal.style.display = 'none';
+        document.body.style.overflow = '';
     }
+}
+
+let staticGuests = { adults: 1, children: 0, infants: 0, pets: 0 };
+
+function toggleWhoDropdown(event) {
+    event.stopPropagation();
+    const card = document.getElementById('whoPopoverCard');
+    if (card) {
+        card.style.display = card.style.display === 'none' ? 'block' : 'none';
+    }
+}
+
+function stepGuest(category, delta) {
+    const limits = {
+        adults: { min: 1, max: 10 },
+        children: { min: 0, max: 6 },
+        infants: { min: 0, max: 5 },
+        pets: { min: 0, max: 3 }
+    };
+    const { min, max } = limits[category];
+    const next = (staticGuests[category] || 0) + delta;
+    if (next < min || next > max) return;
+    staticGuests[category] = next;
+
+    const el = document.getElementById(`${category}Count`);
+    if (el) el.textContent = next;
+
+    // Update summary text
+    const parts = [];
+    parts.push(`${staticGuests.adults} ${staticGuests.adults === 1 ? 'Adult' : 'Adults'}`);
+    if (staticGuests.children > 0) parts.push(`${staticGuests.children} ${staticGuests.children === 1 ? 'Child' : 'Children'}`);
+    if (staticGuests.infants > 0) parts.push(`${staticGuests.infants} ${staticGuests.infants === 1 ? 'Infant' : 'Infants'}`);
+    if (staticGuests.pets > 0) parts.push(`${staticGuests.pets} ${staticGuests.pets === 1 ? 'Pet' : 'Pets'}`);
+
+    const summaryEl = document.getElementById('whoSummaryText');
+    if (summaryEl) summaryEl.textContent = parts.join(', ');
 }
 
 // Submit Booking
@@ -887,5 +999,6 @@ function closeBookingModal() {
     const modal = document.getElementById('bookingModal');
     if (modal) {
         modal.style.display = 'none';
+        document.body.style.overflow = '';
     }
 }

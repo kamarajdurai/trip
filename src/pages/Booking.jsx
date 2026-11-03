@@ -33,6 +33,81 @@ const Booking = () => {
     const [bookingSuccessModal, setBookingSuccessModal] = useState(null); // booking summary data
     const [bookingInProgress, setBookingInProgress] = useState(false);
 
+    // Who (Guests) dropdown state
+    const [guests, setGuests] = useState({
+        adults: 1,
+        children: 0,
+        infants: 0,
+        pets: 0
+    });
+    const [whoDropdownOpen, setWhoDropdownOpen] = useState(false);
+    const whoDropdownRef = useRef(null);
+
+    // Close "Who" dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (whoDropdownRef.current && !whoDropdownRef.current.contains(event.target)) {
+                setWhoDropdownOpen(false);
+            }
+        };
+        if (whoDropdownOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [whoDropdownOpen]);
+
+    const updateGuestCount = (category, delta) => {
+        setGuests(prev => {
+            const current = prev[category] || 0;
+            const next = current + delta;
+            const limits = {
+                adults: { min: 1, max: 10 },
+                children: { min: 0, max: 6 },
+                infants: { min: 0, max: 5 },
+                pets: { min: 0, max: 3 }
+            };
+            const { min, max } = limits[category];
+            if (next < min || next > max) return prev;
+            return { ...prev, [category]: next };
+        });
+    };
+
+    const getGuestsSummary = (customGuests = guests) => {
+        const parts = [];
+        const totalAdults = customGuests?.adults || 1;
+        parts.push(`${totalAdults} ${totalAdults === 1 ? 'Adult' : 'Adults'}`);
+        if (customGuests?.children > 0) {
+            parts.push(`${customGuests.children} ${customGuests.children === 1 ? 'Child' : 'Children'}`);
+        }
+        if (customGuests?.infants > 0) {
+            parts.push(`${customGuests.infants} ${customGuests.infants === 1 ? 'Infant' : 'Infants'}`);
+        }
+        if (customGuests?.pets > 0) {
+            parts.push(`${customGuests.pets} ${customGuests.pets === 1 ? 'Pet' : 'Pets'}`);
+        }
+        return parts.join(', ');
+    };
+
+    // Lock body scroll and prevent background layout shift when any modal is open
+    useEffect(() => {
+        const isModalOpen = Boolean(hotelDetailsModal || bookingModal || bookingFormModal || bookingSuccessModal);
+        if (isModalOpen) {
+            const originalOverflow = document.body.style.overflow;
+            const originalPaddingRight = document.body.style.paddingRight;
+            const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
+            document.body.style.overflow = 'hidden';
+            if (scrollBarWidth > 0) {
+                document.body.style.paddingRight = `${scrollBarWidth}px`;
+            }
+            return () => {
+                document.body.style.overflow = originalOverflow;
+                document.body.style.paddingRight = originalPaddingRight;
+            };
+        }
+    }, [hotelDetailsModal, bookingModal, bookingFormModal, bookingSuccessModal]);
+
     const placesService = useRef(null);
     const geocoder = useRef(null);
     const canvasRef = useRef(null);
@@ -461,6 +536,8 @@ const Booking = () => {
                 contactNumber,
                 checkInDate,
                 checkOutDate,
+                guests,
+                totalGuests: (guests.adults || 0) + (guests.children || 0) + (guests.infants || 0),
                 roomNumber,
                 price,
                 idType,
@@ -489,6 +566,7 @@ const Booking = () => {
                 contactNumber,
                 checkInDate,
                 checkOutDate,
+                guests,
                 idType,
                 idFile
             });
@@ -657,17 +735,28 @@ const Booking = () => {
                         }
                         return (
                             <div key={place.place_id} className="hotel-card">
-                                {photoUrl && <img src={photoUrl} alt={place.name} />}
+                                {photoUrl ? (
+                                    <img src={photoUrl} alt={place.name} />
+                                ) : (
+                                    <div className="hotel-card-fallback-img">
+                                        <i className="fa-solid fa-hotel"></i>
+                                    </div>
+                                )}
                                 <div className="hotel-card-content">
                                     <div className="hotel-name">{place.name}</div>
-                                    <div className="hotel-address">{place.formatted_address || place.vicinity}</div>
+                                    <div className="hotel-address">
+                                        <i className="fa-solid fa-location-dot" style={{ marginRight: '6px', color: '#9ca3af' }}></i>
+                                        {place.formatted_address || place.vicinity}
+                                    </div>
                                     {place.rating && (
                                         <div className="hotel-rating">
                                             <span className="rating-value">{place.rating.toFixed(1)} ★ {place.user_ratings_total && `(${place.user_ratings_total} reviews)`}</span>
                                         </div>
                                     )}
                                     <div className="hotel-info">
-                                        <div className="price-info">{place.price_level !== undefined ? ['Free', '$', '$$', '$$$', '$$$$'][place.price_level] : 'Contact for pricing'}</div>
+                                        <div className={`price-info ${place.price_level !== undefined ? 'has-price' : ''}`}>
+                                            {place.price_level !== undefined ? ['Free', '$', '$$', '$$$', '$$$$'][place.price_level] : 'Contact for pricing'}
+                                        </div>
                                         <button className="view-details" onClick={() => setHotelDetailsModal(place)}>View Details</button>
                                     </div>
                                 </div>
@@ -683,253 +772,527 @@ const Booking = () => {
                     )}
                     {results.length === 0 && !loading && !error && <div className="no-results"></div>}
                 </div>
+            </div>
 
-                {/* Hotel Details Modal */}
-                {hotelDetailsModal && (
-                    <div id="hotelDetailsModal" className="modal" style={{ display: 'block' }} onClick={(e) => { if (e.target.id === 'hotelDetailsModal') setHotelDetailsModal(null) }}>
-                        <div className="modal-content booking-modal-content">
-                            <div className="booking-header">
+            {/* Hotel Details Modal */}
+            {hotelDetailsModal && (
+                <div id="hotelDetailsModal" className="modal" onClick={(e) => { if (e.target.id === 'hotelDetailsModal') setHotelDetailsModal(null) }}>
+                    <div className="modal-content booking-modal-content hotel-details-modal-box">
+                        <div className="booking-header">
+                            <div className="modal-header-info">
                                 <h2>{hotelDetailsModal.name}</h2>
-                                <span className="close-modal" onClick={() => setHotelDetailsModal(null)}>&times;</span>
+                                <div className="modal-header-meta">
+                                    {hotelDetailsModal.rating && (
+                                        <span className="modal-meta-pill rating-pill">
+                                            <i className="fa-solid fa-star"></i>
+                                            <span>{hotelDetailsModal.rating.toFixed(1)}</span>
+                                            {hotelDetailsModal.user_ratings_total && (
+                                                <span className="meta-reviews">({hotelDetailsModal.user_ratings_total} reviews)</span>
+                                            )}
+                                        </span>
+                                    )}
+                                    {hotelDetailsModal.price_level !== undefined && (
+                                        <span className="modal-meta-pill price-pill">
+                                            {['Free', '$', '$$', '$$$', '$$$$'][hotelDetailsModal.price_level]}
+                                        </span>
+                                    )}
+                                    <span className="modal-meta-pill status-pill">
+                                        <span className="live-dot"></span> Verified Listing
+                                    </span>
+                                </div>
                             </div>
-                            <div className="booking-body">
-                                {hotelDetailsModal.photos && (
-                                    <div className="booking-section"><h3>Ambiance</h3><div className="image-gallery">
+                            <span className="close-modal" onClick={() => setHotelDetailsModal(null)} title="Close">&times;</span>
+                        </div>
+                        <div className="booking-body hotel-details-body">
+                            {/* Photo Gallery */}
+                            {hotelDetailsModal.photos && hotelDetailsModal.photos.length > 0 && (
+                                <div className="modal-section ambiance-section">
+                                    <div className="section-title-row">
+                                        <h3 className="section-title">
+                                            <i className="fa-solid fa-camera-retro"></i> Property Ambiance
+                                        </h3>
+                                        <span className="photo-count-pill">{Math.min(6, hotelDetailsModal.photos.length)} Photos</span>
+                                    </div>
+                                    <div className="image-gallery">
                                         {hotelDetailsModal.photos.slice(0, 6).map((p, i) => (
-                                            <div key={i} className="gallery-item"><img src={p.getUrl({ maxWidth: 600 })} alt="Ambiance" /></div>
-                                        ))}
-                                    </div></div>
-                                )}
-                                <div className="detail-section"><strong>📍 Address:</strong><p>{hotelDetailsModal.formatted_address || hotelDetailsModal.vicinity}</p></div>
-                                {hotelDetailsModal.website && <div className="detail-section"><strong>🌐 Website:</strong><p><a href={hotelDetailsModal.website} target="_blank" rel="noreferrer">Visit Website</a></p></div>}
-
-                                <div style={{ marginTop: 30, textAlign: 'center' }}>
-                                    <button className="book-room-btn" onClick={() => {
-                                        setBookingModal({
-                                            placeId: hotelDetailsModal.place_id,
-                                            name: hotelDetailsModal.name,
-                                            rooms: initRooms(hotelDetailsModal)
-                                        });
-                                        setHotelDetailsModal(null);
-                                    }}>Book a Room ➜</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Room Selection Modal */}
-                {bookingModal && (
-                    <div id="bookingModal" className="modal" style={{ display: 'block' }} onClick={(e) => { if (e.target.id === 'bookingModal') setBookingModal(null) }}>
-                        <div className="modal-content booking-modal-content">
-                            <div className="booking-header">
-                                <h2>Book Room at {bookingModal.name}</h2>
-                                <span className="close-modal" onClick={() => setBookingModal(null)}>&times;</span>
-                            </div>
-                            <div className="booking-body">
-                                <h3>Available Rooms</h3>
-                                <div className="rooms-grid">
-                                    {bookingModal.rooms.filter(r => r.status === 'available').map((room) => (
-                                        <div key={room.number} className="room-card available"
-                                            onClick={() => {
-                                                const rawSearch = searchInput.trim();
-                                                const resolvedPlace = rawSearch ? rawSearch.split(',')[0].trim() : 'Tamil Nadu';
-                                                setBookingFormModal({
-                                                    hotelId: bookingModal.placeId,
-                                                    roomNumber: room.number,
-                                                    hotelName: bookingModal.name,
-                                                    price: room.price,
-                                                    placeName: resolvedPlace
-                                                });
-                                                setIdType('Aadhar Card');
-                                                setIdFile(null);
-                                                setBookingModal(null);
-                                            }}
-                                        >
-                                            <div className="room-info-top">
-                                                <span className="room-status-tag">Available</span>
-                                                <span className="room-type-tag">{room.type}</span>
-                                            </div>
-                                            <div className="room-number-display">Room {room.number}</div>
-                                            <div className="room-price-display">₹{Math.floor(room.price)}<span>/night</span></div>
-                                            <button className="book-btn-mini">Select Unit</button>
-                                        </div>
-                                    ))}
-                                </div>
-                                <h3>Commonly Booked</h3>
-                                <div className="rooms-grid">
-                                    {bookingModal.rooms.filter(r => r.status === 'booked').map((room) => (
-                                        <div key={room.number} className="room-card booked">
-                                            <div className="room-number-display">Room {room.number}</div>
-                                            <div className="room-status-tag">Currently Occupied</div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Booking Form Modal */}
-                {bookingFormModal && (
-                    <div id="bookingFormModal" className="modal" style={{ display: 'block' }} onClick={(e) => { if (e.target.id === 'bookingFormModal') setBookingFormModal(null) }}>
-                        <div className="modal-content booking-modal-content" style={{ maxWidth: 600 }}>
-                            <div className="booking-header">
-                                <h2>Complete Booking</h2>
-                                <span className="close-modal" onClick={() => setBookingFormModal(null)}>&times;</span>
-                            </div>
-                            <div className="booking-body">
-                                <div className="booking-summary-box">
-                                    <p>Confirming <strong>Room {bookingFormModal.roomNumber}</strong> at <strong>{bookingFormModal.hotelName}</strong></p>
-                                    <p className="summary-price">Rate: ₹{Math.floor(bookingFormModal.price)}/night</p>
-                                </div>
-                                <form onSubmit={bookRoom} className="booking-form-premium">
-                                    <div className="form-group-modern">
-                                        <label>Full Guest Name</label>
-                                        <input type="text" name="guestName" placeholder="John Doe" required />
-                                    </div>
-                                    <div className="form-group-modern">
-                                        <label>Contact Number</label>
-                                        <input type="tel" name="contactNumber" placeholder="+91 98765 43210" required />
-                                    </div>
-                                    <div className="form-row-modern">
-                                        <div className="form-group-modern">
-                                            <label>Check-in Date</label>
-                                            <input type="date" name="checkIn" required />
-                                        </div>
-                                        <div className="form-group-modern">
-                                            <label>Check-out Date</label>
-                                            <input type="date" name="checkOut" required />
-                                        </div>
-                                    </div>
-                                    <div className="form-group-modern">
-                                        <label>Select ID Document Type</label>
-                                        <select 
-                                            value={idType} 
-                                            onChange={e => setIdType(e.target.value)}
-                                            className="filter-input-select"
-                                        >
-                                            <option value="Aadhar Card">Aadhar Card</option>
-                                            <option value="PAN Card">PAN Card</option>
-                                            <option value="Passport">Passport</option>
-                                            <option value="Driving License">Driving License</option>
-                                        </select>
-                                    </div>
-                                    <div className="form-group-modern">
-                                        <label>Upload ID Proof ({idType})</label>
-                                        {!idFile ? (
-                                            <div className="upload-zone" onClick={() => document.getElementById('id-proof-input').click()}>
-                                                <i className="fa-solid fa-cloud-arrow-up"></i>
-                                                <p>Click or drag to upload document</p>
-                                                <span>PDF, PNG, JPG (Max 5MB)</span>
-                                                <input 
-                                                    id="id-proof-input" 
-                                                    type="file" 
-                                                    accept="image/*,application/pdf" 
-                                                    style={{ display: 'none' }} 
-                                                    onChange={handleFileUpload} 
-                                                    required 
+                                            <div key={i} className="gallery-item">
+                                                <img 
+                                                    src={p.getUrl({ maxWidth: 600 })} 
+                                                    alt={`${hotelDetailsModal.name} ambiance ${i + 1}`} 
+                                                    loading="lazy" 
                                                 />
                                             </div>
-                                        ) : (
-                                            <div className="upload-preview-card">
-                                                <div className="preview-details">
-                                                    {idFile.type.startsWith('image/') ? (
-                                                        <img src={idFile.dataURL} alt="ID Preview" className="preview-thumb" />
-                                                    ) : (
-                                                        <div className="preview-icon"><i className="fa-solid fa-file-pdf"></i></div>
-                                                    )}
-                                                    <div className="preview-meta">
-                                                        <span className="file-name">{idFile.name}</span>
-                                                        <span className="file-size">{idFile.size}</span>
-                                                    </div>
-                                                </div>
-                                                <button type="button" className="remove-file-btn" onClick={() => setIdFile(null)}>
-                                                    <i className="fa-solid fa-trash"></i> Remove
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <button type="submit" className="confirm-btn-premium" disabled={bookingInProgress}>
-                                        {bookingInProgress ? 'Processing Stay...' : 'Confirm Secure Booking'}
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Booking Success Modal */}
-                {bookingSuccessModal && (
-                    <div id="bookingSuccessModal" className="modal" style={{ display: 'block' }} onClick={(e) => { if (e.target.id === 'bookingSuccessModal') setBookingSuccessModal(null) }}>
-                        <div className="modal-content booking-modal-content" style={{ maxWidth: 550 }}>
-                            <div className="booking-header" style={{ justifyContent: 'center', background: 'var(--success-color)' }}>
-                                <h2>Booking Confirmed!</h2>
-                            </div>
-                            <div className="booking-body" style={{ padding: '24px', textAlign: 'center' }}>
-                                <div className="success-checkmark-wrapper">
-                                    <div className="success-checkmark">
-                                        <div className="check-icon">
-                                            <span className="icon-line line-tip"></span>
-                                            <span className="icon-line line-long"></span>
-                                            <div className="icon-circle"></div>
-                                            <div className="icon-fix"></div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </div>
-                                
-                                <h3 style={{ margin: '12px 0 6px', color: 'var(--success-color)', fontSize: '1.4rem', fontWeight: 800 }}>Stay Secured</h3>
-                                <p style={{ color: 'var(--text-secondary)', marginBottom: 20, fontSize: '0.9rem' }}>Your reservation has been successfully completed. A confirmation email has been sent to your registered address.</p>
-                                
-                                <div className="success-receipt-box">
-                                    <div className="receipt-row">
-                                        <span>Hotel</span>
-                                        <strong>{bookingSuccessModal.hotelName}</strong>
-                                    </div>
-                                    <div className="receipt-row">
-                                        <span>Room Number</span>
-                                        <strong>Room {bookingSuccessModal.roomNumber}</strong>
-                                    </div>
-                                    <div className="receipt-row">
-                                        <span>Guest Name</span>
-                                        <strong>{bookingSuccessModal.guestName}</strong>
-                                    </div>
-                                    <div className="receipt-row">
-                                        <span>Check-in Date</span>
-                                        <strong>{bookingSuccessModal.checkInDate}</strong>
-                                    </div>
-                                    <div className="receipt-row">
-                                        <span>Check-out Date</span>
-                                        <strong>{bookingSuccessModal.checkOutDate}</strong>
-                                    </div>
-                                    <div className="receipt-row">
-                                        <span>Rate</span>
-                                        <strong>₹{Math.floor(bookingSuccessModal.price)}/night</strong>
-                                    </div>
-                                    <div className="receipt-row-divider"></div>
-                                    <div className="receipt-row document-proof-row">
-                                        <span>ID Proof ({bookingSuccessModal.idType})</span>
-                                        <div className="proof-attachment">
-                                            {bookingSuccessModal.idFile.type.startsWith('image/') ? (
-                                                <img src={bookingSuccessModal.idFile.dataURL} alt="ID Document" className="receipt-proof-img" onClick={() => window.open(bookingSuccessModal.idFile.dataURL)} title="Click to view full size" />
-                                            ) : (
-                                                <div className="receipt-proof-pdf" onClick={() => window.open(bookingSuccessModal.idFile.dataURL)}>
-                                                    <i className="fa-solid fa-file-pdf"></i>
-                                                    <span>View ID Document</span>
-                                                </div>
+                            )}
+
+                            {/* Property Details Grid */}
+                            <div className="modal-section details-overview-section">
+                                <div className="section-title-row">
+                                    <h3 className="section-title">
+                                        <i className="fa-solid fa-circle-info"></i> Property Information
+                                    </h3>
+                                </div>
+                                <div className="hotel-info-grid">
+                                    {/* Address Card */}
+                                    <div className="hotel-info-card">
+                                        <div className="info-icon-box location-icon">
+                                            <i className="fa-solid fa-location-dot"></i>
+                                        </div>
+                                        <div className="info-content-box">
+                                            <span className="info-label">Address</span>
+                                            <p className="info-value">{hotelDetailsModal.formatted_address || hotelDetailsModal.vicinity || 'Address not available'}</p>
+                                            {hotelDetailsModal.url && (
+                                                <a href={hotelDetailsModal.url} target="_blank" rel="noreferrer" className="info-action-link">
+                                                    <span>Open in Google Maps</span>
+                                                    <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                                                </a>
                                             )}
                                         </div>
                                     </div>
+
+                                    {/* Website Card */}
+                                    {hotelDetailsModal.website && (
+                                        <div className="hotel-info-card">
+                                            <div className="info-icon-box website-icon">
+                                                <i className="fa-solid fa-globe"></i>
+                                            </div>
+                                            <div className="info-content-box">
+                                                <span className="info-label">Website</span>
+                                                <a href={hotelDetailsModal.website} target="_blank" rel="noreferrer" className="info-action-link main-link">
+                                                    <span>Visit Official Website</span>
+                                                    <i className="fa-solid fa-arrow-up-right-from-square"></i>
+                                                </a>
+                                                <span className="info-subtext">Direct booking & property info</span>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Phone Card */}
+                                    {(hotelDetailsModal.formatted_phone_number || hotelDetailsModal.international_phone_number) && (
+                                        <div className="hotel-info-card">
+                                            <div className="info-icon-box phone-icon">
+                                                <i className="fa-solid fa-phone"></i>
+                                            </div>
+                                            <div className="info-content-box">
+                                                <span className="info-label">Contact Reception</span>
+                                                <a href={`tel:${hotelDetailsModal.formatted_phone_number || hotelDetailsModal.international_phone_number}`} className="info-action-link main-link">
+                                                    <span>{hotelDetailsModal.formatted_phone_number || hotelDetailsModal.international_phone_number}</span>
+                                                </a>
+                                                <span className="info-subtext">24/7 Desk assistance</span>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
-                                
-                                <button className="confirm-btn-premium" style={{ width: '100%', marginTop: 20 }} onClick={() => setBookingSuccessModal(null)}>
-                                    Back to Search
-                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Action Footer */}
+                        <div className="hotel-modal-footer">
+                            <div className="footer-left-info">
+                                <span className="footer-guarantee-badge">
+                                    <i className="fa-solid fa-shield-halved"></i> Best Rate Guaranteed
+                                </span>
+                                <span className="footer-sub-tag">Direct reservations & verified check-in</span>
+                            </div>
+                            <button className="book-room-btn" onClick={() => {
+                                setBookingModal({
+                                    placeId: hotelDetailsModal.place_id,
+                                    name: hotelDetailsModal.name,
+                                    rooms: initRooms(hotelDetailsModal)
+                                });
+                                setHotelDetailsModal(null);
+                            }}>
+                                <span>Book a Room</span>
+                                <i className="fa-solid fa-arrow-right-long"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Room Selection Modal */}
+            {bookingModal && (
+                <div id="bookingModal" className="modal" onClick={(e) => { if (e.target.id === 'bookingModal') setBookingModal(null) }}>
+                    <div className="modal-content booking-modal-content">
+                        <div className="booking-header">
+                            <h2>Book Room at {bookingModal.name}</h2>
+                            <span className="close-modal" onClick={() => setBookingModal(null)} title="Close">&times;</span>
+                        </div>
+                        <div className="booking-body">
+                            <h3>Available Rooms</h3>
+                            <div className="rooms-grid">
+                                {bookingModal.rooms.filter(r => r.status === 'available').map((room) => (
+                                    <div key={room.number} className="room-card available"
+                                        onClick={() => {
+                                            const rawSearch = searchInput.trim();
+                                            const resolvedPlace = rawSearch ? rawSearch.split(',')[0].trim() : 'Tamil Nadu';
+                                            setBookingFormModal({
+                                                hotelId: bookingModal.placeId,
+                                                roomNumber: room.number,
+                                                hotelName: bookingModal.name,
+                                                price: room.price,
+                                                placeName: resolvedPlace
+                                            });
+                                            setIdType('Aadhar Card');
+                                            setIdFile(null);
+                                            setGuests({ adults: 1, children: 0, infants: 0, pets: 0 });
+                                            setWhoDropdownOpen(false);
+                                            setBookingModal(null);
+                                        }}
+                                    >
+                                        <div className="room-info-top">
+                                            <span className="room-status-tag">Available</span>
+                                            <span className="room-type-tag">{room.type}</span>
+                                        </div>
+                                        <div className="room-number-display">Room {room.number}</div>
+                                        <div className="room-price-display">₹{Math.floor(room.price)}<span>/night</span></div>
+                                        <button className="book-btn-mini">Select Unit</button>
+                                    </div>
+                                ))}
+                            </div>
+                            <h3>Commonly Booked</h3>
+                            <div className="rooms-grid">
+                                {bookingModal.rooms.filter(r => r.status === 'booked').map((room) => (
+                                    <div key={room.number} className="room-card booked">
+                                        <div className="room-number-display">Room {room.number}</div>
+                                        <div className="room-status-tag">Currently Occupied</div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
+
+            {/* Booking Form Modal */}
+            {bookingFormModal && (
+                <div id="bookingFormModal" className="modal" onClick={(e) => { if (e.target.id === 'bookingFormModal') setBookingFormModal(null) }}>
+                    <div className="modal-content booking-modal-content" style={{ maxWidth: 620 }}>
+                        <div className="booking-header">
+                            <h2>Complete Booking</h2>
+                            <span className="close-modal" onClick={() => setBookingFormModal(null)} title="Close">&times;</span>
+                        </div>
+                        <div className="booking-body">
+                            <div className="booking-summary-box">
+                                <div className="summary-hotel-info">
+                                    <p>Confirming <strong>Room {bookingFormModal.roomNumber}</strong></p>
+                                    <p className="summary-hotel-name">{bookingFormModal.hotelName}</p>
+                                </div>
+                                <div className="summary-price-box">
+                                    <span className="summary-price">₹{Math.floor(bookingFormModal.price)}</span>
+                                    <span className="summary-per-night">/night</span>
+                                </div>
+                            </div>
+                            <form onSubmit={bookRoom} className="booking-form-premium">
+                                <div className="form-group-modern">
+                                    <label>Full Guest Name</label>
+                                    <input type="text" name="guestName" placeholder="Enter guest's full name" required />
+                                </div>
+                                <div className="form-group-modern">
+                                    <label>Contact Number</label>
+                                    <input type="tel" name="contactNumber" placeholder="+91 98765 43210" required />
+                                </div>
+                                <div className="form-row-modern">
+                                    <div className="form-group-modern">
+                                        <label>Check-in Date</label>
+                                        <input 
+                                            type="date" 
+                                            name="checkIn" 
+                                            min={new Date().toISOString().split('T')[0]} 
+                                            required 
+                                        />
+                                    </div>
+                                    <div className="form-group-modern">
+                                        <label>Check-out Date</label>
+                                        <input 
+                                            type="date" 
+                                            name="checkOut" 
+                                            min={new Date().toISOString().split('T')[0]} 
+                                            required 
+                                        />
+                                    </div>
+                                </div>
+                                <div className="form-group-modern who-dropdown-container" ref={whoDropdownRef}>
+                                    <label>Who</label>
+                                    <div 
+                                        className={`who-dropdown-trigger ${whoDropdownOpen ? 'active' : ''}`}
+                                        onClick={() => setWhoDropdownOpen(!whoDropdownOpen)}
+                                        tabIndex={0}
+                                        role="button"
+                                        aria-expanded={whoDropdownOpen}
+                                    >
+                                        <div className="who-trigger-content">
+                                            <i className="fa-solid fa-user-group who-icon"></i>
+                                            <span className="who-trigger-text">{getGuestsSummary()}</span>
+                                        </div>
+                                        <i className={`fa-solid fa-chevron-${whoDropdownOpen ? 'up' : 'down'} who-chevron`}></i>
+                                    </div>
+
+                                    {whoDropdownOpen && (
+                                        <div className="who-popover-card">
+                                            {/* Adults */}
+                                            <div className="who-popover-row">
+                                                <div className="who-row-info">
+                                                    <span className="who-row-title">Adults</span>
+                                                    <span className="who-row-subtitle">Ages 13 or above</span>
+                                                </div>
+                                                <div className="who-stepper">
+                                                    <button 
+                                                        type="button" 
+                                                        className={`stepper-btn ${guests.adults <= 1 ? 'disabled' : ''}`} 
+                                                        onClick={() => updateGuestCount('adults', -1)}
+                                                        disabled={guests.adults <= 1}
+                                                        aria-label="Decrease adults"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <span className="stepper-value">{guests.adults}</span>
+                                                    <button 
+                                                        type="button" 
+                                                        className={`stepper-btn ${guests.adults >= 10 ? 'disabled' : ''}`} 
+                                                        onClick={() => updateGuestCount('adults', 1)}
+                                                        disabled={guests.adults >= 10}
+                                                        aria-label="Increase adults"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Children */}
+                                            <div className="who-popover-row">
+                                                <div className="who-row-info">
+                                                    <span className="who-row-title">Children</span>
+                                                    <span className="who-row-subtitle">Ages 2–12</span>
+                                                </div>
+                                                <div className="who-stepper">
+                                                    <button 
+                                                        type="button" 
+                                                        className={`stepper-btn ${guests.children <= 0 ? 'disabled' : ''}`} 
+                                                        onClick={() => updateGuestCount('children', -1)}
+                                                        disabled={guests.children <= 0}
+                                                        aria-label="Decrease children"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <span className="stepper-value">{guests.children}</span>
+                                                    <button 
+                                                        type="button" 
+                                                        className={`stepper-btn ${guests.children >= 6 ? 'disabled' : ''}`} 
+                                                        onClick={() => updateGuestCount('children', 1)}
+                                                        disabled={guests.children >= 6}
+                                                        aria-label="Increase children"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Infants */}
+                                            <div className="who-popover-row">
+                                                <div className="who-row-info">
+                                                    <span className="who-row-title">Infants</span>
+                                                    <span className="who-row-subtitle">Under 2</span>
+                                                </div>
+                                                <div className="who-stepper">
+                                                    <button 
+                                                        type="button" 
+                                                        className={`stepper-btn ${guests.infants <= 0 ? 'disabled' : ''}`} 
+                                                        onClick={() => updateGuestCount('infants', -1)}
+                                                        disabled={guests.infants <= 0}
+                                                        aria-label="Decrease infants"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <span className="stepper-value">{guests.infants}</span>
+                                                    <button 
+                                                        type="button" 
+                                                        className={`stepper-btn ${guests.infants >= 5 ? 'disabled' : ''}`} 
+                                                        onClick={() => updateGuestCount('infants', 1)}
+                                                        disabled={guests.infants >= 5}
+                                                        aria-label="Increase infants"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Pets */}
+                                            <div className="who-popover-row who-popover-row-last">
+                                                <div className="who-row-info">
+                                                    <span className="who-row-title">Pets</span>
+                                                    <span className="who-row-subtitle who-service-link" title="Service animals are always permitted">
+                                                        Bringing a service animal?
+                                                    </span>
+                                                </div>
+                                                <div className="who-stepper">
+                                                    <button 
+                                                        type="button" 
+                                                        className={`stepper-btn ${guests.pets <= 0 ? 'disabled' : ''}`} 
+                                                        onClick={() => updateGuestCount('pets', -1)}
+                                                        disabled={guests.pets <= 0}
+                                                        aria-label="Decrease pets"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <span className="stepper-value">{guests.pets}</span>
+                                                    <button 
+                                                        type="button" 
+                                                        className={`stepper-btn ${guests.pets >= 3 ? 'disabled' : ''}`} 
+                                                        onClick={() => updateGuestCount('pets', 1)}
+                                                        disabled={guests.pets >= 3}
+                                                        aria-label="Increase pets"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="who-popover-footer">
+                                                <button 
+                                                    type="button" 
+                                                    className="who-done-btn"
+                                                    onClick={() => setWhoDropdownOpen(false)}
+                                                >
+                                                    Done
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="form-group-modern">
+                                    <label>Select ID Document Type</label>
+                                    <select 
+                                        value={idType} 
+                                        onChange={e => setIdType(e.target.value)}
+                                        className="filter-input-select"
+                                    >
+                                        <option value="Aadhar Card">Aadhar Card</option>
+                                        <option value="PAN Card">PAN Card</option>
+                                        <option value="Passport">Passport</option>
+                                        <option value="Driving License">Driving License</option>
+                                    </select>
+                                </div>
+                                <div className="form-group-modern">
+                                    <label>Upload ID Proof ({idType})</label>
+                                    {!idFile ? (
+                                        <div className="upload-zone" onClick={() => document.getElementById('id-proof-input').click()}>
+                                            <i className="fa-solid fa-cloud-arrow-up"></i>
+                                            <p>Click or drag to upload document</p>
+                                            <span>PDF, PNG, JPG (Max 5MB)</span>
+                                            <input 
+                                                id="id-proof-input" 
+                                                type="file" 
+                                                accept="image/*,application/pdf" 
+                                                style={{ display: 'none' }} 
+                                                onChange={handleFileUpload} 
+                                                required 
+                                            />
+                                        </div>
+                                    ) : (
+                                        <div className="upload-preview-card">
+                                            <div className="preview-details">
+                                                {idFile.type.startsWith('image/') ? (
+                                                    <img src={idFile.dataURL} alt="ID Preview" className="preview-thumb" />
+                                                ) : (
+                                                    <div className="preview-icon"><i className="fa-solid fa-file-pdf"></i></div>
+                                                )}
+                                                <div className="preview-meta">
+                                                    <span className="file-name">{idFile.name}</span>
+                                                    <span className="file-size">{idFile.size}</span>
+                                                </div>
+                                            </div>
+                                            <button type="button" className="remove-file-btn" onClick={() => setIdFile(null)}>
+                                                <i className="fa-solid fa-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                                <button type="submit" className="confirm-btn-premium" disabled={bookingInProgress}>
+                                    {bookingInProgress ? 'Processing Stay...' : 'Confirm Secure Booking'}
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Booking Success Modal */}
+            {bookingSuccessModal && (
+                <div id="bookingSuccessModal" className="modal" onClick={(e) => { if (e.target.id === 'bookingSuccessModal') setBookingSuccessModal(null) }}>
+                    <div className="modal-content booking-modal-content" style={{ maxWidth: 550 }}>
+                        <div className="booking-header" style={{ justifyContent: 'center', background: 'var(--success-color)' }}>
+                            <h2>Booking Confirmed!</h2>
+                        </div>
+                        <div className="booking-body" style={{ padding: '24px', textAlign: 'center' }}>
+                            <div className="success-checkmark-wrapper">
+                                <div className="success-checkmark">
+                                    <div className="check-icon">
+                                        <span className="icon-line line-tip"></span>
+                                        <span className="icon-line line-long"></span>
+                                        <div className="icon-circle"></div>
+                                        <div className="icon-fix"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <h3 style={{ margin: '12px 0 6px', color: 'var(--success-color)', fontSize: '1.4rem', fontWeight: 800 }}>Stay Secured</h3>
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: 20, fontSize: '0.9rem' }}>Your reservation has been successfully completed. A confirmation email has been sent to your registered address.</p>
+                            
+                            <div className="success-receipt-box">
+                                <div className="receipt-row">
+                                    <span>Hotel</span>
+                                    <strong>{bookingSuccessModal.hotelName}</strong>
+                                </div>
+                                <div className="receipt-row">
+                                    <span>Room Number</span>
+                                    <strong>Room {bookingSuccessModal.roomNumber}</strong>
+                                </div>
+                                <div className="receipt-row">
+                                    <span>Guest Name</span>
+                                    <strong>{bookingSuccessModal.guestName}</strong>
+                                </div>
+                                <div className="receipt-row">
+                                    <span>Who (Guests)</span>
+                                    <strong>{getGuestsSummary(bookingSuccessModal.guests)}</strong>
+                                </div>
+                                <div className="receipt-row">
+                                    <span>Check-in Date</span>
+                                    <strong>{bookingSuccessModal.checkInDate}</strong>
+                                </div>
+                                <div className="receipt-row">
+                                    <span>Check-out Date</span>
+                                    <strong>{bookingSuccessModal.checkOutDate}</strong>
+                                </div>
+                                <div className="receipt-row">
+                                    <span>Rate</span>
+                                    <strong>₹{Math.floor(bookingSuccessModal.price)}/night</strong>
+                                </div>
+                                <div className="receipt-row-divider"></div>
+                                <div className="receipt-row document-proof-row">
+                                    <span>ID Proof ({bookingSuccessModal.idType})</span>
+                                    <div className="proof-attachment">
+                                        {bookingSuccessModal.idFile.type.startsWith('image/') ? (
+                                            <img src={bookingSuccessModal.idFile.dataURL} alt="ID Document" className="receipt-proof-img" onClick={() => window.open(bookingSuccessModal.idFile.dataURL)} title="Click to view full size" />
+                                        ) : (
+                                            <div className="receipt-proof-pdf" onClick={() => window.open(bookingSuccessModal.idFile.dataURL)}>
+                                                <i className="fa-solid fa-file-pdf"></i>
+                                                <span>View ID Document</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button className="confirm-btn-premium" style={{ width: '100%', marginTop: 20 }} onClick={() => setBookingSuccessModal(null)}>
+                                Back to Search
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
             <Footer />
         </div>
     );

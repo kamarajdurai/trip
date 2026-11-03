@@ -72,7 +72,17 @@ const PlanTrip = () => {
         const unsub = onAuthStateChanged(auth, (user) => {
             setCurrentUser(user);
         });
-        return () => unsub();
+        // Ensure clean body layout without stray padding or white bars
+        const originalBg = document.body.style.backgroundColor;
+        const originalPadding = document.body.style.paddingBottom;
+        document.body.style.backgroundColor = '#f8f4e7';
+        document.body.style.paddingBottom = '0px';
+
+        return () => {
+            unsub();
+            document.body.style.backgroundColor = originalBg;
+            document.body.style.paddingBottom = originalPadding;
+        };
     }, []);
 
     useEffect(() => {
@@ -601,14 +611,10 @@ const PlanTrip = () => {
         <div className="app-container">
             {/* ── Mobile Top Header (Visible only on mobile screens < 900px) ── */}
             <header className="mob-header-bar">
-                <div className="mob-brand-text">
-                    <span className="mob-brand-title">Tamil Nadu</span>
-                    <span className="mob-brand-sub">Tourism</span>
-                </div>
                 <img 
-                    src="/mob_header_gopuram.png" 
-                    alt="Tamil Nadu Gopuram" 
-                    className="mob-header-graphic" 
+                    src="/mob_header_clean.png" 
+                    alt="Tamil Nadu Tourism" 
+                    className="mob-header-full-banner" 
                 />
             </header>
 
@@ -734,6 +740,7 @@ const PlanTrip = () => {
                             {[
                                 { id: 'solo', label: 'Solo', icon: 'fa-user' },
                                 { id: 'partner', label: 'Partner', icon: 'fa-user-group' },
+                                { id: 'friends', label: 'Friends', icon: 'fa-people-group' },
                                 { id: 'family', label: 'Family', icon: 'fa-users' }
                             ].map(item => (
                                 <button
@@ -836,7 +843,7 @@ const PlanTrip = () => {
             </aside>
 
             {/* ── Right Main Card (Laptop & Tablet) ── */}
-            <main className="main-content-card">
+            <main className={`main-content-card ${(!outputHtml && !weatherData && !loading) ? 'is-empty-state' : ''}`}>
                 {loading ? (
                     <div className="loading-view">
                         <div className="loading-spinner-circle"></div>
